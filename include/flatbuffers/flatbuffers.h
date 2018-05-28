@@ -19,6 +19,8 @@
 
 #include "flatbuffers/base.h"
 
+#include "distributed-allocator/RDMAMemory.hpp"
+
 namespace flatbuffers {
 // Wrapper for uoffset_t to allow safe template specialization.
 // Value is allowed to be 0 to indicate a null object (see e.g. AddOffset).
@@ -409,6 +411,30 @@ class DefaultAllocator : public Allocator {
   void deallocate(uint8_t *p, size_t) FLATBUFFERS_OVERRIDE {
     delete[] p;
   }
+};
+
+// This is the allocator 
+class RampAllocator : public Allocator {
+ public:
+  void *addr; // this is just for temp use. Builder can actually store this info
+
+  RampAllocator(RDMAMemoryManager *manager) {
+    manager_ = manager;
+  }
+
+  uint8_t *allocate(size_t size) FLATBUFFERS_OVERRIDE {
+    addr = manager_->allocate(size);
+    return (uint8_t *)addr;
+  }
+
+  void deallocate(uint8_t *p, size_t) FLATBUFFERS_OVERRIDE {
+    //delete[] p;
+    addr = nullptr;
+    manager_->deallocate(p);
+  }
+
+ private:
+  RDMAMemoryManager *manager_;
 };
 
 // These functions allow for a null allocator to mean use the default allocator,
