@@ -32,10 +32,6 @@ int main(int argc, char* argv[]) {
     flatbuffers::RampAllocator ramp_alloc(memory_manager);
     flatbuffers::FlatBufferBuilder builder(mem_size, &ramp_alloc);
     size_t size = mem_size;
-    if (size < builder.GetSize()) {
-        printf("Memory declared is not enough\n");
-        return 0;        
-    }
 
 #else
     flatbuffers::FlatBufferBuilder builder;
@@ -73,11 +69,11 @@ int main(int argc, char* argv[]) {
   auto myClass = CreateClass(builder, name, students, teacher);
   builder.Finish(myClass);  // done serialize the information
 
-  
   // address will always change whenever you run this sample
   // however, the size is always the same if the data is not changed
   std::cout << builder.GetBufferPointer() << std::endl;
   auto class1 = GetClass(builder.GetBufferPointer());
+  std::cout << builder.GetSize() << std::endl;
   std::cout << class1->name() << std::endl;
   std::cout << class1->name()->str() << std::endl;
 
@@ -102,6 +98,15 @@ int main(int argc, char* argv[]) {
 
     // we need to transfer the whole segment
     printf("Preparing...\n");
+
+    if (size < builder.GetSize() + sizeof(uint8_t *)) {
+        //size = builder.GetSize() + sizeof(uint8_t *);
+        size = memory_manager->getRDMAMemory(ramp_alloc.addr)->size;
+    } else {
+        size += sizeof(uint8_t *);
+    }
+
+    // The size passed in must be the same as actual memory size
     memory_manager->Prepare(ramp_alloc.addr, size, 1);
     RDMAMemory* rdma_memory = nullptr;
     printf("Prepare done\n");

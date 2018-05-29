@@ -413,7 +413,7 @@ class DefaultAllocator : public Allocator {
   }
 };
 
-// This is the allocator 
+// User defined allocator using RDMA version allocator 
 class RampAllocator : public Allocator {
  public:
   void *addr; // this is just for temp use. Builder can actually store this info
@@ -423,13 +423,11 @@ class RampAllocator : public Allocator {
   }
 
   uint8_t *allocate(size_t size) FLATBUFFERS_OVERRIDE {
-    addr = manager_->allocate(size);
+    addr = manager_->allocate(size + sizeof(uint8_t *));
     return (uint8_t *)addr;
   }
 
   void deallocate(uint8_t *p, size_t) FLATBUFFERS_OVERRIDE {
-    //delete[] p;
-    addr = nullptr;
     manager_->deallocate(p);
   }
 

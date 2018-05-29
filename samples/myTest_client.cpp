@@ -27,21 +27,15 @@ int main(int argc, char const *argv[])
     }
     int server_id = atoi(argv[2]);
     RDMAMemoryManager* manager = new RDMAMemoryManager(argv[1], server_id);
-    int memory_size = atoi(argv[3]);
 
     RDMAMemory* rdma_memory  = nullptr;
     while((rdma_memory = manager->PollForTransfer()) == nullptr) {}  // pulled size here is 256?
-
+    
     // get the real address of the buffer
     uint8_t ** temp = (uint8_t **)rdma_memory->vaddr;
     char *memory = (char*)(*temp);
 
-    if (rdma_memory == nullptr) {
-        printf("error memory segment\n");
-        return 0;
-    }
-
-    //char* memory = (char*)rdma_memory->vaddr;
+    // char* memory = (char*)rdma_memory->vaddr;
     LogInfo("Pulled memory with %p with %s of size %zu", memory, memory, rdma_memory->size);  // size here is 1024
 
     flatbuffers::Verifier verifier((uint8_t *)memory, sizeof(char)*1024);
@@ -111,8 +105,9 @@ int main(int argc, char const *argv[])
   */
 
     std::cout << class1->name() << std::endl;
-
     std::cout << class1->name()->str() << std::endl;
+    std::cout << class1->students()->Get(1)->name() << std::endl;
+    std::cout << class1->students()->Get(1)->name()->str() << std::endl;
     
 #if RDMA_enabled
     printf("%s\n", memory);
