@@ -589,6 +589,11 @@ class vector_downward {
     if (own_allocator_ && allocator_) { delete allocator_; }
   }
 
+  // This function may be improved/deleted based on builder constructor
+  void setAllocator(Allocator * allocator) {
+    allocator_ = allocator;
+  }
+
   void reset() {
     if (buf_) {
       Deallocate(allocator_, buf_, reserved_);
@@ -786,6 +791,31 @@ class FlatBufferBuilder {
     EndianCheck();
   }
 
+  // TODO: modify this constructor if we don't need allocator as a passed in parameter
+  explicit FlatBufferBuilder(RDMAMemoryManager * manager,
+                             size_t initial_size = 1024,
+                             Allocator *allocator = nullptr,
+                             bool own_allocator = true,
+                             size_t buffer_minalign = AlignOf<largest_scalar_t>())
+      : manager_(manager),
+        buf_(initial_size, allocator, own_allocator, buffer_minalign),
+        num_field_loc(0),
+        max_voffset_(0),
+        nested(false),
+        finished(false),
+        minalign_(1),
+        force_defaults_(false),
+        dedup_vtables_(true),
+        string_pool(nullptr) {
+
+    if (allocator == nullptr) {
+      RampAllocator * ramp_alloc = new RampAllocator(manager);
+      buf_.setAllocator(ramp_alloc);
+    }
+
+    EndianCheck();
+  }
+
   ~FlatBufferBuilder() {
     if (string_pool) delete string_pool;
   }
@@ -859,6 +889,44 @@ class FlatBufferBuilder {
     FLATBUFFERS_ASSERT(finished);
   }
   /// @endcond
+
+  /*
+    Methods for transfer the buffer using RDMA-migration-system
+  */
+
+ // temp use. Could be deleted after transportation is embeded into flatbuffer
+  // this should be moved to private after things get work
+
+  /// @brief Prepare for sending the buffer
+  void Prepare(int id) {
+    Finished();
+    uint8_t * start = buf_.scratch_data();
+
+    uint8_t ** temp = (uint8_t **)start;
+    *temp = buf_.data();
+
+    size_t segment_size = manager_->getRDMAMemory(start)->size;
+    manager_->Prepare(start, segment_size, id);
+  }
+
+  bool PollForAccept() {
+    rdma_memory = manager_->PollForAccept();
+    if (rdma_memory == nullptr)
+      return false;
+
+    return true;
+  }
+
+  void Transfer() {
+    if (rdma_memory == nullptr) {
+      // error handling here
+    }
+    manager_->Transfer(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+  }
+
+  void PollForClose() {
+    manager_->PollForClose();
+  }
 
   /// @brief In order to save space, fields that are set to their default value
   /// don't get serialized into the buffer.
@@ -1627,6 +1695,8 @@ class FlatBufferBuilder {
     voffset_t id;
   };
 
+  RDMAMemoryManager * manager_;
+  RDMAMemory *rdma_memory;
   vector_downward buf_;
 
   // Accumulating offsets of table members while it is being built.

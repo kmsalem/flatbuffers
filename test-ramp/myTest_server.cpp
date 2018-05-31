@@ -28,10 +28,7 @@ int main(int argc, char* argv[]) {
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
     int mem_size = atoi(argv[3]);
 
-    //flatbuffers::RampAllocator ramp_alloc(memory_manager);
-    flatbuffers::RampAllocator ramp_alloc(memory_manager);
-    flatbuffers::FlatBufferBuilder builder(mem_size, &ramp_alloc);
-    size_t size = mem_size;
+    flatbuffers::FlatBufferBuilder builder(memory_manager, mem_size);
 
 #else
     flatbuffers::FlatBufferBuilder builder;
@@ -89,37 +86,16 @@ int main(int argc, char* argv[]) {
 
 
 #if RDMA_enabled
-
-    // store the address of the buffer
-    uint8_t * buff_pointer = builder.GetBufferPointer();
-    uint8_t ** temp = (uint8_t **)ramp_alloc.addr;
-    *temp = buff_pointer;
-
-
-    // we need to transfer the whole segment
-    printf("Preparing...\n");
-
-    if (size < builder.GetSize() + sizeof(uint8_t *)) {
-        //size = builder.GetSize() + sizeof(uint8_t *);
-        size = memory_manager->getRDMAMemory(ramp_alloc.addr)->size;
-    } else {
-        size += sizeof(uint8_t *);
-    }
-
-    // The size passed in must be the same as actual memory size
-    memory_manager->Prepare(ramp_alloc.addr, size, 1);
-    RDMAMemory* rdma_memory = nullptr;
+    // Whole segment is being transferred
+    printf("Preparing....\n");
+    builder.Prepare(1);
     printf("Prepare done\n");
 
-    //int i = 0;
-    while((rdma_memory = memory_manager->PollForAccept()) == nullptr) {
-        //i++;
-        //if(i >= (int)size)
-        //    i = 0;    // what does this do?
-    }
-printf("Ready for transfer\n");
-    memory_manager->Transfer(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
-    memory_manager->PollForClose();
+    while(!builder.PollForAccept()) {}
+
+    printf("Ready for transfer\n");
+    builder.Transfer();
+    builder.PollForClose();
 
 #else
   
