@@ -1750,6 +1750,24 @@ class FlatBufferBuilder {
 };
 /// @}
 
+
+/*
+    Methods for obtaining the buffer transferred through RDMA-migration-system
+*/
+
+uint8_t * PollForRoot(RDMAMemoryManager * manager) {
+  RDMAMemory * rdma_memory = manager->PollForTransfer();
+  if (rdma_memory == nullptr)
+    return nullptr;
+
+  return (uint8_t *)rdma_memory->vaddr ;
+}
+
+void Close(RDMAMemoryManager * manager, uint8_t * addr) {
+  RDMAMemory * rdma_memory = manager->getRDMAMemory(addr);
+  manager->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+}
+
 /// @cond FLATBUFFERS_INTERNAL
 // Helpers to get a typed pointer to the root object contained in the buffer.
 template<typename T> T *GetMutableRoot(void *buf) {
