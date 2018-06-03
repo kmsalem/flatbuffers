@@ -933,12 +933,14 @@ class FlatBufferBuilder {
   */
 
   /// @brief Get the ownership of the buffer
-  uint8_t * PollForRoot() {
+  char * PollForRoot() {
     rdma_memory = manager_->PollForTransfer();
       if (rdma_memory == nullptr)
         return nullptr;
-
-    return (uint8_t *)rdma_memory->vaddr;
+    
+    uint8_t **temp = (uint8_t **)rdma_memory->vaddr; 
+    char *memory = (char*)(*temp);
+    return memory;
   }
 
   /// @brief Close the connection

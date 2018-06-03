@@ -30,12 +30,8 @@ int main(int argc, char const *argv[])
     RDMAMemoryManager* manager = new RDMAMemoryManager(argv[1], server_id);
     flatbuffers::FlatBufferBuilder builder(manager, mem_size);
 
-    uint8_t *addr; // start address of RDMA segment
-    while ((addr = builder.PollForRoot()) == nullptr) {}
-    
-    // get the real address of the buffer
-    uint8_t **temp = (uint8_t **)addr; 
-    char *memory = (char*)(*temp);
+    char *memory; // start address of RDMA segment
+    while ((memory = builder.PollForRoot()) == nullptr) {}
 
     flatbuffers::Verifier verifier((uint8_t *)memory, sizeof(char)*1024);
     printf("Start verifying flatbuffer\n");
