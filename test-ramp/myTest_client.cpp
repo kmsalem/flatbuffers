@@ -26,10 +26,12 @@ int main(int argc, char const *argv[])
         return 1;
     }
     int server_id = atoi(argv[2]);
+    int mem_size = atoi(argv[3]);
     RDMAMemoryManager* manager = new RDMAMemoryManager(argv[1], server_id);
+    flatbuffers::FlatBufferBuilder builder(manager, mem_size);
 
     uint8_t *addr; // start address of RDMA segment
-    while ((addr = flatbuffers::PollForRoot(manager)) == nullptr) {}
+    while ((addr = builder.PollForRoot()) == nullptr) {}
     
     // get the real address of the buffer
     uint8_t **temp = (uint8_t **)addr; 
@@ -109,7 +111,7 @@ int main(int argc, char const *argv[])
 #if RDMA_enabled
     printf("%s\n", memory);
     //manager->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
-    flatbuffers::Close(manager, addr);
+    builder.Close();
 
 #else
     printf("%s\n", buffer);
