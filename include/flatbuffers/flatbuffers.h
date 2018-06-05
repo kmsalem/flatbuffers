@@ -894,9 +894,6 @@ class FlatBufferBuilder {
     Methods for transfer the buffer using RDMA-migration-system
   */
 
- // temp use. Could be deleted after transportation is embeded into flatbuffer
-  // this should be moved to private after things get work
-
   /// @brief Prepare for sending the buffer
   void Prepare(int id) {
     Finished();
@@ -909,6 +906,7 @@ class FlatBufferBuilder {
     manager_->Prepare(start, segment_size, id);
   }
 
+  /// @brief Sending request to receiving server
   bool PollForAccept() {
     rdma_memory = manager_->PollForAccept();
     if (rdma_memory == nullptr)
@@ -917,6 +915,7 @@ class FlatBufferBuilder {
     return true;
   }
 
+  /// @brief Transfer the ownership of buffer
   void Transfer() {
     if (rdma_memory == nullptr) {
       // error handling here
@@ -924,8 +923,32 @@ class FlatBufferBuilder {
     manager_->Transfer(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
   }
 
+  /// @brief Close the connection
   void PollForClose() {
     manager_->PollForClose();
+  }
+
+  /*
+    Methods for obtaining the buffer transferred through RDMA-migration-system
+  */
+
+  /// @brief Get the ownership of the buffer
+  char * PollForRoot() {
+    rdma_memory = manager_->PollForTransfer();
+      if (rdma_memory == nullptr)
+        return nullptr;
+    
+    uint8_t **temp = (uint8_t **)rdma_memory->vaddr; 
+    char *memory = (char*)(*temp);
+    return memory;
+  }
+
+  /// @brief Close the connection
+  void Close() {
+    if (rdma_memory == nullptr) {
+      // error handling here
+    }
+    manager_->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
   }
 
   /// @brief In order to save space, fields that are set to their default value

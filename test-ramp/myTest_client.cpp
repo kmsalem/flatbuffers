@@ -26,17 +26,12 @@ int main(int argc, char const *argv[])
         return 1;
     }
     int server_id = atoi(argv[2]);
+    int mem_size = atoi(argv[3]);
     RDMAMemoryManager* manager = new RDMAMemoryManager(argv[1], server_id);
+    flatbuffers::FlatBufferBuilder builder(manager, mem_size);
 
-    RDMAMemory* rdma_memory  = nullptr;
-    while((rdma_memory = manager->PollForTransfer()) == nullptr) {}  // pulled size here is 256?
-    
-    // get the real address of the buffer
-    uint8_t ** temp = (uint8_t **)rdma_memory->vaddr;
-    char *memory = (char*)(*temp);
-
-    // char* memory = (char*)rdma_memory->vaddr;
-    LogInfo("Pulled memory with %p with %s of size %zu", memory, memory, rdma_memory->size);  // size here is 1024
+    char *memory; // start address of RDMA segment
+    while ((memory = builder.PollForRoot()) == nullptr) {}
 
     flatbuffers::Verifier verifier((uint8_t *)memory, sizeof(char)*1024);
     printf("Start verifying flatbuffer\n");
@@ -111,7 +106,9 @@ int main(int argc, char const *argv[])
     
 #if RDMA_enabled
     printf("%s\n", memory);
-    manager->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+    //manager->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+    builder.Close();
+
 #else
     printf("%s\n", buffer);
 #endif
