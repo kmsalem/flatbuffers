@@ -1,0 +1,11 @@
+// Example IDL file for trival schema
+
+namespace simple;
+
+table TinyTable {
+  foo:short;
+  bar:short;
+  zam:string;
+}
+
+root_type TinyTable;
