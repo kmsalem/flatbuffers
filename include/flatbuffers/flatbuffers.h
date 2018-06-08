@@ -2224,11 +2224,64 @@ inline uoffset_t GetPrefixedSize(const uint8_t* buf){ return ReadScalar<uoffset_
 // C++ data structures).
 // Contains no functionality, purely documentative.
 struct NativeTable {
+ public:
+   /*
+    Methods for transfer the buffer using RDMA-migration-system
+  */
+
+  /// @brief Prepare for sending the buffer
+  void Prepare(int id) {
+    manager_->Prepare((void *)start_, size_, id);
+  }
+
+  /// @brief Sending request to receiving server
+  bool PollForAccept() {
+    rdma_memory = manager_->PollForAccept();
+    if (rdma_memory == nullptr)
+      return false;
+
+    return true;
+  }
+
+  /// @brief Transfer the ownership of buffer
+  void Transfer() {
+    if (rdma_memory == nullptr) {
+      // error handling here
+    }
+    manager_->Transfer(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+  }
+
+  /// @brief Close the connection
+  bool PollForClose() {
+    rdma_memory = manager_->PollForClose();
+    if (rdma_memory == nullptr)
+      return false;
+
+    return true;
+  }
 
   /*
-    we should implement send/receive function for Native structure through RaMP here 
+    Methods for obtaining the buffer transferred through RDMA-migration-system
   */
+
+  void Pull() {
+    // this function does nothing now
+  }
+
+  /// @brief Close the connection
+  void Close() {
+    if (rdma_memory == nullptr) {
+      // error handling here
+    }
+    manager_->close(rdma_memory->vaddr, rdma_memory->size, rdma_memory->pair);
+  }
  
+  RDMAMemoryManager * manager_;
+  RDMAMemory * rdma_memory;
+
+  // start and size are only needed when root is just created, at which time rdma_memory is not initialized
+  void * start_;
+  size_t size_;
 };
 
 /// @brief Function types to be used with resolving hashes into objects and

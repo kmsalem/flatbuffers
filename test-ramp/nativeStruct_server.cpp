@@ -10,15 +10,19 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-using namespace my::test;
+
+struct simpliest {
+    int foo_;
+    int bar_;
+};
 
 /// test structure
-struct test_simple_struct
+struct test_simple_struct : public flatbuffers::NativeTable
 {
     int foo;
     int bar;
+    struct simpliest * sp;
 };
-
 
 int main(int argc, char* argv[]) {
     if (argc < 3) {
@@ -30,7 +34,7 @@ int main(int argc, char* argv[]) {
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
     RampBuilder<struct test_simple_struct> *mtb = new RampBuilder<struct test_simple_struct>(memory_manager);
     struct test_simple_struct *mt = mtb->CreateRoot(1024);
-    mt->foo = 1;
+    mt->foo = 8;
     mt->bar = 2;
     
     RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt+sizeof(test_simple_struct));
@@ -38,6 +42,23 @@ int main(int argc, char* argv[]) {
     printf("Address of the object is %p \n", mt);
     printf("pool_addr stored in allocator is %p \n", alloc->pool_addr);
     printf("addr stored in allocator is %p \n", alloc->addr);
+
+    std::cout << "Address of foo is " << &mt->foo << std::endl;
     std::cout << sizeof(test_simple_struct) << std::endl;
     std::cout << sizeof(RampAllocator) << std::endl;
+
+    mt->Prepare(1);
+    while(!mt->PollForAccept()) {}
+    mt->Transfer();
+    while(!mt->PollForClose()) {};
+
+    //mt->sp = CreateWith<simpliest>(mt);
+    //mt->sp->foo_ = 100;
+
+    //printf("Address of sp is %p \n", mt->sp);
+    //printf("Address of sp->foo_ is %p \n", &mt->sp->foo_);
+    
+    
+    delete mtb;
+    delete memory_manager;
 }

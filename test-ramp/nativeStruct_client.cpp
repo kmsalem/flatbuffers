@@ -3,16 +3,26 @@
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
-#include "TestObj_generated.h"
+#include "TestObj_api.h"
+#include "flatbuffers/ramp_builder.h"
 
 #include <unistd.h>
 #include <stdio.h>
-#include <sys/socket.h>
 #include <stdlib.h>
-#include <netinet/in.h>
 #include <string.h>
-#include <arpa/inet.h>
-using namespace my::test;
+
+struct simpliest {
+    int foo_;
+    int bar_;
+};
+
+/// test structure
+struct test_simple_struct : public flatbuffers::NativeTable
+{
+    int foo;
+    int bar;
+    struct simpliest * sp;
+};
   
 int main(int argc, char const *argv[])
 {
@@ -23,5 +33,14 @@ int main(int argc, char const *argv[])
     int server_id = atoi(argv[2]);
     int mem_size = atoi(argv[3]);
 
-    RDMAMemoryManager* manager = new RDMAMemoryManager(argv[1], server_id);
+    RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
+    RampBuilder<struct test_simple_struct> *mtb = new RampBuilder<struct test_simple_struct>(memory_manager);
+    struct test_simple_struct *mt;
+    while ((mt = mtb->PollForRoot()) == nullptr) {}
+
+    std::cout << "Value of foo is " << mt->foo << std::endl;
+    std::cout << "Value of bar is " << mt->bar << std::endl;
+    mt->Close();
+
+    delete memory_manager;
 }

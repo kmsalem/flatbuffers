@@ -64,11 +64,13 @@ class RampBuilder {
     // create a root object at the start of the segment
     root_type * root = (root_type *)memory;
     *root = T();
+    root->manager_ = manager_;
+    root->start_ = (void *)memory;
+    root->size_ = size;
 
     // build the allocator
     RampAllocator *allocator = (RampAllocator *)(memory+sizeof(root_type));
-    std::cout << "size of total is " << sizeof(root_type)+sizeof(RampAllocator) << std::endl;
-    allocator->pool_addr = (void*)((uint8_t*)memory+sizeof(root_type)+sizeof(RampAllocator));
+    allocator->pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAllocator));
     allocator->unused_past = allocator->pool_addr;
     allocator->pool_size = size - (sizeof(root_type) + sizeof(RampAllocator));
     allocator->addr = memory;
@@ -76,8 +78,36 @@ class RampBuilder {
     return root;
   }
 
+  /// @brief Get the ownership of the buffer
+  root_type * PollForRoot() {
+    RDMAMemory * rdma_memory = manager_->PollForTransfer();
+    if (rdma_memory == nullptr)
+      return nullptr;
+    
+    root_type * root = (root_type *)rdma_memory->vaddr;
+    root->manager_ = manager_;
+    root->rdma_memory = rdma_memory;
+    return root;
+  }
+
  private:
   RDMAMemoryManager * manager_;
 };
+
+// @brief create an user-defined structure that is not a root type
+/*
+  Problem to consider here:
+    1. can we allow structure including other structure including other structure?
+    2. what kind of pointer we should use (return)? 
+*/ 
+template<class T, class Parent>
+T * CreateWith(Parent *parent) {
+  // Get the allocator
+  RampAllocator *alloc = (RampAllocator *)((char *)parent+sizeof(Parent));
+  void * addr = alloc->allocate(sizeof(T));
+  T * temp = (T *)addr;
+  *temp = T();
+  return temp;
+}
 
 #endif // RAMP_BUILDER_H
