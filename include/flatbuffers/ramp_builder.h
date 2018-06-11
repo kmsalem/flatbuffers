@@ -105,20 +105,16 @@ class RampBuilder {
   RDMAMemoryManager * manager_;
 };
 
-// @brief create an user-defined structure that is not a root type
-/*
-  Problem to consider here:
-    1. can we allow structure including other structure including other structure?
-    2. what kind of pointer we should use (return)? 
-*/ 
-template<class T, class Parent>
-T * CreateWith(Parent *parent) {
+// @brief create an user-defined structure that is not a root type 
+template<class T, class R>
+T * CreateWith(R *root) {
   // Get the allocator
-  RampAllocator *alloc = (RampAllocator *)((char *)parent+sizeof(Parent));
+  RampAllocator *alloc = (RampAllocator *)((char *)root+sizeof(R));
   void * addr = alloc->allocate(sizeof(T));
-  T * temp = (T *)addr;
-  *temp = T();
-  return temp;
+  //T * temp = (T *)addr;
+  //*temp = T();
+  T *result = new (addr) T();
+  return result;
 }
 
 #endif // RAMP_BUILDER_H

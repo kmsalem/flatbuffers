@@ -32,7 +32,7 @@ int main(int argc, char const *argv[])
         return 1;
     }
     int server_id = atoi(argv[2]);
-    int mem_size = atoi(argv[3]);
+    //int mem_size = atoi(argv[3]);
 
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
     RampBuilder<struct test_simple_struct> *mtb = new RampBuilder<struct test_simple_struct>(memory_manager);
@@ -41,6 +41,8 @@ int main(int argc, char const *argv[])
 
     std::cout << "Value of foo is " << mt->foo << std::endl;
     std::cout << "Value of bar is " << mt->bar << std::endl;
+    std::cout << "Value of sp->foo_ is " << mt->sp->foo_ << std::endl;
+    std::cout << "Value of sp->bar_ is " << mt->sp->bar_ << std::endl;
     mt->Close();
 
     delete memory_manager;

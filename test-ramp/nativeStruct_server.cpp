@@ -48,18 +48,17 @@ int main(int argc, char* argv[]) {
     std::cout << sizeof(test_simple_struct) << std::endl;
     std::cout << sizeof(RampAllocator) << std::endl;
 
+    mt->sp = CreateWith<simpliest>(mt);
+    mt->sp->foo_ = 100;
+
+    printf("Address of sp is %p \n", mt->sp);
+    printf("Address of sp->foo_ is %p \n", &mt->sp->foo_);
+
     mt->Prepare(1);
     while(!mt->PollForAccept()) {}
     mt->Transfer();
     while(!mt->PollForClose()) {};
 
-    //mt->sp = CreateWith<simpliest>(mt);
-    //mt->sp->foo_ = 100;
-
-    //printf("Address of sp is %p \n", mt->sp);
-    //printf("Address of sp->foo_ is %p \n", &mt->sp->foo_);
-    
-    
     delete mtb;
     delete memory_manager;
 }

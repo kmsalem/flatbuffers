@@ -2227,6 +2227,7 @@ struct NativeTable {
  public:
   explicit NativeTable() {}
 
+  // this is the constructor fot root type only
   explicit NativeTable(RDMAMemoryManager *manager, 
               void * start, 
               size_t size): manager_(manager), 
