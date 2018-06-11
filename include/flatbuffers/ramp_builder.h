@@ -11,6 +11,17 @@
 // this is just an easy allocator using the same machenism as mempool in RDMA-migration-system 
 class RampAllocator {
  public:
+  explicit RampAllocator(void *pool_addr, 
+                          size_t pool_size, 
+                          void * unused_past,
+                          void *addr, 
+                          size_t size):     // put some default values if needed
+            pool_addr(pool_addr),
+            pool_size(pool_size), 
+            unused_past(unused_past),
+            addr(addr), 
+            size(size) {}
+  
   void* allocate(size_t bytes) noexcept {
     
     // LogInfo("allocate(bytes = %p) called on %p", (void*) bytes, this);
@@ -62,19 +73,19 @@ class RampBuilder {
     void * memory = manager_->allocate(size);
 
     // create a root object at the start of the segment
-    root_type * root = (root_type *)memory;
-    *root = T();
-    root->manager_ = manager_;
-    root->start_ = (void *)memory;
-    root->size_ = size;
+    root_type * root = new (memory) T(manager_, (void *)memory, size);
+    //root->manager_ = manager_;
+    //root->start_ = (void *)memory;
+    //root->size_ = size;  // need to see if this worth modification to compiler  
 
     // build the allocator
-    RampAllocator *allocator = (RampAllocator *)(memory+sizeof(root_type));
-    allocator->pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAllocator));
-    allocator->unused_past = allocator->pool_addr;
-    allocator->pool_size = size - (sizeof(root_type) + sizeof(RampAllocator));
-    allocator->addr = memory;
-    allocator->size = size;
+    void *pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAllocator));
+    RampAllocator *allocator = new (memory+sizeof(root_type)) 
+                                    RampAllocator(pool_addr,  
+                                                  size - (sizeof(root_type) + sizeof(RampAllocator)),
+                                                  pool_addr,
+                                                  memory, 
+                                                  size);
     return root;
   }
 

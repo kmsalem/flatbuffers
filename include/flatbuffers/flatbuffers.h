@@ -2225,6 +2225,13 @@ inline uoffset_t GetPrefixedSize(const uint8_t* buf){ return ReadScalar<uoffset_
 // Contains no functionality, purely documentative.
 struct NativeTable {
  public:
+  explicit NativeTable() {}
+
+  explicit NativeTable(RDMAMemoryManager *manager, 
+              void * start, 
+              size_t size): manager_(manager), 
+                            start_(start), 
+                            size_(size) {}
    /*
     Methods for transfer the buffer using RDMA-migration-system
   */
@@ -2279,6 +2286,7 @@ struct NativeTable {
   RDMAMemoryManager * manager_;
   RDMAMemory * rdma_memory;
 
+ private:
   // start and size are only needed when root is just created, at which time rdma_memory is not initialized
   void * start_;
   size_t size_;

@@ -19,6 +19,7 @@ struct simpliest {
 /// test structure
 struct test_simple_struct : public flatbuffers::NativeTable
 {
+    using NativeTable::NativeTable;
     int foo;
     int bar;
     struct simpliest * sp;
@@ -34,7 +35,7 @@ int main(int argc, char* argv[]) {
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
     RampBuilder<struct test_simple_struct> *mtb = new RampBuilder<struct test_simple_struct>(memory_manager);
     struct test_simple_struct *mt = mtb->CreateRoot(1024);
-    mt->foo = 8;
+    mt->foo = 4;
     mt->bar = 2;
     
     RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt+sizeof(test_simple_struct));
