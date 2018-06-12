@@ -5,11 +5,14 @@
 #include "flatbuffers/util.h"
 #include "TestObj_api.h"
 #include "flatbuffers/ramp_builder.h"
+#include "flatbuffers/SAllocator.h"
 
 #include <unistd.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+
+//typedef std::basic_string<char, std::char_traits<char>, RampAllocator> String;
 
 struct simpliest {
     int foo_;
@@ -20,9 +23,12 @@ struct simpliest {
 struct test_simple_struct : public flatbuffers::NativeTable
 {
     using NativeTable::NativeTable;
+    test_simple_struct():foo(0), bar(0) {}
     int foo;
     int bar;
     struct simpliest * sp;
+    rString id;
+    rString testString;
 };
 
 int main(int argc, char* argv[]) {
@@ -41,8 +47,7 @@ int main(int argc, char* argv[]) {
     RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt+sizeof(test_simple_struct));
 
     printf("Address of the object is %p \n", mt);
-    printf("pool_addr stored in allocator is %p \n", alloc->pool_addr);
-    printf("addr stored in allocator is %p \n", alloc->addr);
+    printf("1.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     std::cout << "Address of foo is " << &mt->foo << std::endl;
     std::cout << sizeof(test_simple_struct) << std::endl;
@@ -50,9 +55,27 @@ int main(int argc, char* argv[]) {
 
     mt->sp = CreateWith<simpliest>(mt);
     mt->sp->foo_ = 100;
+    printf("2.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    printf("Address of sp is %p \n", mt->sp);
-    printf("Address of sp->foo_ is %p \n", &mt->sp->foo_);
+    // Create the string
+    SAllocator<char> sa = SAllocator<char>(alloc);
+    rString my = rString("hello", sa);
+    mt->id = my;
+
+    std::cout << "My id is " << mt->id << std::endl;
+    printf("Address of my String is %p \n", mt->id);
+    printf("3.unused_past stored in allocator is %p \n", alloc->unused_past);
+
+    mt->id = "hi thereaaaaaaa";  // this works fine
+    //mt->id = "hi there there there";  // will cause segmeatation fault in receiving side when read
+                                        // overwrite '=' operation to make it resisable???
+    std::cout << "My id is " << mt->id << std::endl;
+    printf("4.unused_past stored in allocator is %p \n", alloc->unused_past);
+
+    //mt->testString = "hey this is my test string";
+    mt->testString = rString("hey this is my test string", sa);
+    std::cout << "My testString is: " << mt->testString << std::endl;
+    printf("5.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     mt->Prepare(1);
     while(!mt->PollForAccept()) {}

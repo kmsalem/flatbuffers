@@ -5,6 +5,7 @@
 #include "flatbuffers/util.h"
 #include "TestObj_api.h"
 #include "flatbuffers/ramp_builder.h"
+#include "flatbuffers/SAllocator.h"
 
 #include <unistd.h>
 #include <stdio.h>
@@ -23,6 +24,8 @@ struct test_simple_struct : public flatbuffers::NativeTable
     int foo;
     int bar;
     struct simpliest * sp;
+    rString id;
+    rString testString;
 };
   
 int main(int argc, char const *argv[])
@@ -43,6 +46,8 @@ int main(int argc, char const *argv[])
     std::cout << "Value of bar is " << mt->bar << std::endl;
     std::cout << "Value of sp->foo_ is " << mt->sp->foo_ << std::endl;
     std::cout << "Value of sp->bar_ is " << mt->sp->bar_ << std::endl;
+    std::cout << "Value of id is " << mt->id << std::endl;
+    std::cout << "Value of testString is " << mt->testString << std::endl;
     mt->Close();
 
     delete memory_manager;

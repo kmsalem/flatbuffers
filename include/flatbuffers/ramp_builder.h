@@ -5,8 +5,12 @@
 #ifndef RAMP_BUILDER_H_
 #define RAMP_BUILDER_H_
 
+#include "assert.h"
 #include "distributed-allocator/RDMAMemory.hpp"
 #include "c++-containers/pool_based_allocator.hpp"
+
+#define is_aligned(POINTER, BYTE_COUNT) \
+    (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
 
 // this is just an easy allocator using the same machenism as mempool in RDMA-migration-system 
 class RampAllocator {
@@ -71,6 +75,7 @@ class RampBuilder {
   /// Create an object inside RDMA segment and initialize the allocator
   root_type * CreateRoot(size_t size) {
     void * memory = manager_->allocate(size);
+    assert(is_aligned(memory,8));
 
     // create a root object at the start of the segment
     root_type * root = new (memory) T(manager_, (void *)memory, size);
@@ -111,8 +116,6 @@ T * CreateWith(R *root) {
   // Get the allocator
   RampAllocator *alloc = (RampAllocator *)((char *)root+sizeof(R));
   void * addr = alloc->allocate(sizeof(T));
-  //T * temp = (T *)addr;
-  //*temp = T();
   T *result = new (addr) T();
   return result;
 }
