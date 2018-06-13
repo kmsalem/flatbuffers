@@ -101,26 +101,13 @@ class RampBuilder {
     if (rdma_memory == nullptr)
       return nullptr;
     
-    root_type * root = (root_type *)(rdma_memory->vaddr+sizeof(RampAlloc));
-    root->manager_ = manager_;
+    root_type * root = new (rdma_memory->vaddr+sizeof(RampAlloc)) T(manager_, rdma_memory->vaddr, rdma_memory->size);
     root->rdma_memory = rdma_memory;
-    root->start_ = rdma_memory->vaddr;
     return root;
   }
 
  private:
   RDMAMemoryManager * manager_;
 };
-
-// @brief create an user-defined structure that is not a root type 
-template<class T, class R>
-T * CreateWith(R *root) {
-  // Get the allocator
-  //RampAllocator *alloc = (RampAllocator *)((char *)root-sizeof(RampAllocator));
-  RampAlloc *alloc = (RampAlloc *)((char *)root->start_);
-  void * addr = alloc->allocate(sizeof(T));
-  T *result = new (addr) T();
-  return result;
-}
 
 #endif // RAMP_BUILDER_H

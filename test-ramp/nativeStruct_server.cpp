@@ -14,7 +14,9 @@
 
 //typedef std::basic_string<char, std::char_traits<char>, RampAllocator> String;
 
-struct simpliest {
+struct simpliest : public flatbuffers::NativeTable 
+{
+    using NativeTable::NativeTable;
     int foo_;
     int bar_;
 };
@@ -53,8 +55,8 @@ int main(int argc, char* argv[]) {
     std::cout << sizeof(test_simple_struct) << std::endl;
     std::cout << sizeof(RampAlloc) << std::endl;
 
-    mt->sp = CreateWith<simpliest>(mt);
-    mt->sp->foo_ = 100;
+    mt->sp = mt->CreateObj<simpliest>();
+    mt->sp->foo_ = 101;
     printf("2.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     mt->id = mt->CreaterString("hello", 10);

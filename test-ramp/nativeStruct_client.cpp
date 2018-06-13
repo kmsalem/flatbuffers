@@ -12,7 +12,9 @@
 #include <stdlib.h>
 #include <string.h>
 
-struct simpliest {
+struct simpliest : public flatbuffers::NativeTable 
+{
+    using NativeTable::NativeTable;
     int foo_;
     int bar_;
 };

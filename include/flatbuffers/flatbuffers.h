@@ -2245,6 +2245,14 @@ struct NativeTable {
     return CreaterString(str, strlen(str));
   }
 
+  template <typename T>
+  T * CreateObj() {
+    RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
+    void * addr = alloc->allocate(sizeof(T));
+    T *result = new (addr) T(manager_, start_, size_);
+    return result;
+  }
+
    /*
     Methods for transfer the buffer using RDMA-migration-system
   */
