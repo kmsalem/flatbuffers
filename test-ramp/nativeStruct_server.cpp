@@ -44,7 +44,8 @@ int main(int argc, char* argv[]) {
     mt->foo = 4;
     mt->bar = 2;
     
-    RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt+sizeof(test_simple_struct));
+    //RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt-sizeof(RampAllocator));
+    RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt->start_);
 
     printf("Address of the object is %p \n", mt);
     printf("1.unused_past stored in allocator is %p \n", alloc->unused_past);

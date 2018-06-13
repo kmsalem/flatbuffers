@@ -77,20 +77,21 @@ class RampBuilder {
     void * memory = manager_->allocate(size);
     assert(is_aligned(memory,8));
 
-    // create a root object at the start of the segment
-    root_type * root = new (memory) T(manager_, (void *)memory, size);
-    //root->manager_ = manager_;
-    //root->start_ = (void *)memory;
-    //root->size_ = size;  // need to see if this worth modification to compiler  
-
     // build the allocator
     void *pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAllocator));
-    RampAllocator *allocator = new (memory+sizeof(root_type)) 
+    RampAllocator *allocator = new (memory) 
                                     RampAllocator(pool_addr,  
                                                   size - (sizeof(root_type) + sizeof(RampAllocator)),
                                                   pool_addr,
                                                   memory, 
                                                   size);
+
+    // create a root object at the start of the segment
+    root_type * root = new (memory+sizeof(RampAllocator)) T(manager_, (void *)memory, size);
+    //root->manager_ = manager_;
+    //root->start_ = (void *)memory;
+    //root->size_ = size;  // need to see if this worth modification to compiler
+
     return root;
   }
 
@@ -100,7 +101,7 @@ class RampBuilder {
     if (rdma_memory == nullptr)
       return nullptr;
     
-    root_type * root = (root_type *)rdma_memory->vaddr;
+    root_type * root = (root_type *)(rdma_memory->vaddr+sizeof(RampAllocator));
     root->manager_ = manager_;
     root->rdma_memory = rdma_memory;
     return root;
@@ -114,7 +115,8 @@ class RampBuilder {
 template<class T, class R>
 T * CreateWith(R *root) {
   // Get the allocator
-  RampAllocator *alloc = (RampAllocator *)((char *)root+sizeof(R));
+  //RampAllocator *alloc = (RampAllocator *)((char *)root-sizeof(RampAllocator));
+  RampAllocator *alloc = (RampAllocator *)((char *)root->start_);
   void * addr = alloc->allocate(sizeof(T));
   T *result = new (addr) T();
   return result;

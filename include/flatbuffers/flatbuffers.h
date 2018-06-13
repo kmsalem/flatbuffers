@@ -20,6 +20,7 @@
 #include "flatbuffers/base.h"
 
 #include "distributed-allocator/RDMAMemory.hpp"
+#include "flatbuffers/SAllocator.h"
 
 namespace flatbuffers {
 // Wrapper for uoffset_t to allow safe template specialization.
@@ -2233,6 +2234,15 @@ struct NativeTable {
               size_t size): manager_(manager), 
                             start_(start), 
                             size_(size) {}
+
+  //rString CreaterString(const char *str, size_t len) {
+
+  //}
+
+  //rString CreaterString(const char *str) {
+    //return CreaterString(str, strlen(str));
+  //} 
+
    /*
     Methods for transfer the buffer using RDMA-migration-system
   */
@@ -2287,7 +2297,6 @@ struct NativeTable {
   RDMAMemoryManager * manager_;
   RDMAMemory * rdma_memory;
 
- private:
   // start and size are only needed when root is just created, at which time rdma_memory is not initialized
   void * start_;
   size_t size_;
