@@ -13,13 +13,13 @@
     (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
 
 // this is just an easy allocator using the same machenism as mempool in RDMA-migration-system 
-class RampAllocator {
+class RampAlloc {
  public:
-  explicit RampAllocator(void *pool_addr, 
-                          size_t pool_size, 
-                          void * unused_past,
-                          void *addr, 
-                          size_t size):     // put some default values if needed
+  explicit RampAlloc(void *pool_addr, 
+                     size_t pool_size, 
+                     void * unused_past,
+                     void *addr, 
+                     size_t size):     // put some default values if needed
             pool_addr(pool_addr),
             pool_size(pool_size), 
             unused_past(unused_past),
@@ -78,16 +78,16 @@ class RampBuilder {
     assert(is_aligned(memory,8));
 
     // build the allocator
-    void *pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAllocator));
-    RampAllocator *allocator = new (memory) 
-                                    RampAllocator(pool_addr,  
-                                                  size - (sizeof(root_type) + sizeof(RampAllocator)),
-                                                  pool_addr,
-                                                  memory, 
-                                                  size);
+    void *pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAlloc));
+    RampAlloc *allocator = new (memory) 
+                                RampAlloc(pool_addr,  
+                                          size - (sizeof(root_type) + sizeof(RampAlloc)),
+                                          pool_addr,
+                                          memory, 
+                                          size);
 
     // create a root object at the start of the segment
-    root_type * root = new (memory+sizeof(RampAllocator)) T(manager_, (void *)memory, size);
+    root_type * root = new (memory+sizeof(RampAlloc)) T(manager_, (void *)memory, size);
     //root->manager_ = manager_;
     //root->start_ = (void *)memory;
     //root->size_ = size;  // need to see if this worth modification to compiler
@@ -101,9 +101,10 @@ class RampBuilder {
     if (rdma_memory == nullptr)
       return nullptr;
     
-    root_type * root = (root_type *)(rdma_memory->vaddr+sizeof(RampAllocator));
+    root_type * root = (root_type *)(rdma_memory->vaddr+sizeof(RampAlloc));
     root->manager_ = manager_;
     root->rdma_memory = rdma_memory;
+    root->start_ = rdma_memory->vaddr;
     return root;
   }
 
@@ -116,7 +117,7 @@ template<class T, class R>
 T * CreateWith(R *root) {
   // Get the allocator
   //RampAllocator *alloc = (RampAllocator *)((char *)root-sizeof(RampAllocator));
-  RampAllocator *alloc = (RampAllocator *)((char *)root->start_);
+  RampAlloc *alloc = (RampAlloc *)((char *)root->start_);
   void * addr = alloc->allocate(sizeof(T));
   T *result = new (addr) T();
   return result;

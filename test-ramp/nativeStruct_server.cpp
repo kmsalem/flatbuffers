@@ -44,37 +44,32 @@ int main(int argc, char* argv[]) {
     mt->foo = 4;
     mt->bar = 2;
     
-    //RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt-sizeof(RampAllocator));
-    RampAllocator *alloc = (RampAllocator *)((uint8_t *)mt->start_);
+    RampAlloc *alloc = (RampAlloc *)((uint8_t *)mt->start_);
 
     printf("Address of the object is %p \n", mt);
     printf("1.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     std::cout << "Address of foo is " << &mt->foo << std::endl;
     std::cout << sizeof(test_simple_struct) << std::endl;
-    std::cout << sizeof(RampAllocator) << std::endl;
+    std::cout << sizeof(RampAlloc) << std::endl;
 
     mt->sp = CreateWith<simpliest>(mt);
     mt->sp->foo_ = 100;
     printf("2.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    // Create the string
-    SAllocator<char> sa = SAllocator<char>(alloc);
-    rString my = rString("hello", sa);
-    mt->id = my;
+    mt->id = mt->CreaterString("hello", 10);
 
     std::cout << "My id is " << mt->id << std::endl;
     printf("Address of my String is %p \n", mt->id);
     printf("3.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    mt->id = "hi thereaaaaaaa";  // this works fine
-    //mt->id = "hi there there there";  // will cause segmeatation fault in receiving side when read
-                                        // overwrite '=' operation to make it resisable???
+    //mt->id = "hi thereaaaaaaa";  // this works fine
+    mt->id = "hi there there there there there there there";  // will not cause segmeatation fault; why?
+    //mt->id = mt->CreaterString("hi there there there there there there there"); // Allocator will assign the same space as above line
     std::cout << "My id is " << mt->id << std::endl;
     printf("4.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    //mt->testString = "hey this is my test string";
-    mt->testString = rString("hey this is my test string", sa);
+    mt->testString = mt->CreaterString("hey this is my test string");
     std::cout << "My testString is: " << mt->testString << std::endl;
     printf("5.unused_past stored in allocator is %p \n", alloc->unused_past);
 

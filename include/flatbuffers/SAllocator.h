@@ -31,11 +31,11 @@ public:
     template <class U> struct rebind {typedef SAllocator<U> other;};
 
 private:
-    RampAllocator *pool_;
+    RampAlloc *pool_;
 
 public:
     // Constructor.
-    SAllocator(RampAllocator *pool) noexcept : pool_(pool) {}
+    SAllocator(RampAlloc *pool) noexcept : pool_(pool) {}
 
     SAllocator() noexcept : debug_level(3), pool_(NULL) {}
 

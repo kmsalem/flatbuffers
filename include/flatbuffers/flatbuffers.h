@@ -2230,18 +2230,20 @@ struct NativeTable {
 
   // this is the constructor fot root type only
   explicit NativeTable(RDMAMemoryManager *manager, 
-              void * start, 
-              size_t size): manager_(manager), 
-                            start_(start), 
-                            size_(size) {}
+                       void * start, 
+                       size_t size): manager_(manager), 
+                                     start_(start), 
+                                     size_(size) {}
 
-  //rString CreaterString(const char *str, size_t len) {
+  rString CreaterString(const char *str, size_t len) {
+    RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
+    SAllocator<char> sa = SAllocator<char>(alloc);
+    return rString(str, sa);
+  }
 
-  //}
-
-  //rString CreaterString(const char *str) {
-    //return CreaterString(str, strlen(str));
-  //} 
+  rString CreaterString(const char *str) {
+    return CreaterString(str, strlen(str));
+  }
 
    /*
     Methods for transfer the buffer using RDMA-migration-system
