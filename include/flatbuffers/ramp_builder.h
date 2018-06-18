@@ -8,62 +8,12 @@
 #include "assert.h"
 #include "distributed-allocator/RDMAMemory.hpp"
 #include "c++-containers/pool_based_allocator.hpp"
+#include "flatbuffers/SAllocator.h"
 
 #define is_aligned(POINTER, BYTE_COUNT) \
     (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
 
 // this is just an easy allocator using the same machenism as mempool in RDMA-migration-system 
-class RampAlloc {
- public:
-  explicit RampAlloc(void *pool_addr, 
-                     size_t pool_size, 
-                     void * unused_past,
-                     void *addr, 
-                     size_t size):     // put some default values if needed
-            pool_addr(pool_addr),
-            pool_size(pool_size), 
-            unused_past(unused_past),
-            addr(addr), 
-            size(size) {}
-  
-  void* allocate(size_t bytes) noexcept {
-    
-    // LogInfo("allocate(bytes = %p) called on %p", (void*) bytes, this);
-
-    // For now, we'll use the next free address.
-    void* result = unused_past;
-    // But before we return, update the next free address.
-    unused_past = (void*) ((char*)unused_past + bytes);
-    LogAssert((uintptr_t)unused_past < (uintptr_t)((char*)addr + size), "OUT OF MEMORY");
-    return result;
-  }
-
-  // deallocate actually does nothing for now
-  void deallocate(void* addr, size_t bytes) noexcept {
-    LogInfo("deallocate(addr = %p, bytes = %p)",addr, (void*) bytes);
-  }
-
-  /**
-    * MemoryPool metadata and state.
-    * The reason this may be different from the actual addr and size of the 
-    * underlying memory is because we may choose to embed information in the memory address themselves
-    * this will not be required if we are using zookeeper
-  */
-  void* pool_addr;
-  size_t pool_size;
-
-  /**
-    * The high watermark for allocated memory, this class implements a
-    * simple allocation algorithm by simply pushing the boundary forward, on an
-    * RDMA pull, we would only need to pull as much as a unused past
-  */
-  void* unused_past;
-
-  //the actualy size of the rdma memory region
-  void* addr;
-  size_t size;
-
-};
 
 template<class T>
 class RampBuilder {
@@ -92,6 +42,14 @@ class RampBuilder {
     //root->start_ = (void *)memory;
     //root->size_ = size;  // need to see if this worth modification to compiler
 
+    //SAllocator<root_type> ra = SAllocator<root_type>(allocator);
+    /*
+    using rebound_alloc_t =
+            typename SAllocator<root_type>::template rebind<rString>::other;
+    auto rebound = rebound_alloc_t(allocator);
+    root_type * root = static_cast<root_type *>(rebound.allocate(sizeof(T)));
+    rebound.construct(root, std::forward<Args>(args)...);
+    */
     return root;
   }
 

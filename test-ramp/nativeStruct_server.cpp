@@ -33,6 +33,7 @@ struct test_simple_struct : public flatbuffers::NativeTable
     rString id;
     rString testString;
     std::vector<int, SAllocator<int> > testVector;
+    std::vector<struct simpliest *, SAllocator<struct simpliest *> > testVectorOfPointer;
 };
 
 int main(int argc, char* argv[]) {
@@ -90,6 +91,14 @@ int main(int argc, char* argv[]) {
     printf("Address of testVector[0] is %p \n", &mt->testVector[0]);
     std::cout << "Value of testVector[1] is " << mt->testVector.at(1) << std::endl;
     printf("6.unused_past stored in allocator is %p \n", alloc->unused_past);
+
+    mt->testVectorOfPointer = mt->CreaterVector<struct simpliest *>();
+    struct simpliest * s1 = mt->CreateObj<simpliest>();
+    struct simpliest * s2 = mt->CreateObj<simpliest>();
+    mt->testVectorOfPointer.push_back(s1);
+    mt->testVectorOfPointer.push_back(s2);
+    mt->testVectorOfPointer[0]->foo_ = 1111;
+    mt->testVectorOfPointer[1]->bar_ = 5;
 
     mt->Prepare(1);
     while(!mt->PollForAccept()) {}
