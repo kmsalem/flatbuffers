@@ -21,6 +21,8 @@
 
 #include "distributed-allocator/RDMAMemory.hpp"
 #include "flatbuffers/SAllocator.h"
+#include <vector>
+#include <scoped_allocator>
 
 namespace flatbuffers {
 // Wrapper for uoffset_t to allow safe template specialization.
@@ -2253,7 +2255,14 @@ struct NativeTable {
     return result;
   }
 
-   /*
+  template <typename T>
+  std::vector<T, SAllocator<T> > CreaterVector() {
+    RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
+    SAllocator<T> va = SAllocator<T>(alloc);
+    return std::vector<T, SAllocator<T> >(va);
+  }
+
+  /*
     Methods for transfer the buffer using RDMA-migration-system
   */
 

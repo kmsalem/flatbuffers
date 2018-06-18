@@ -11,6 +11,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <vector>
+//#include <scoped_allocator>
 
 struct simpliest : public flatbuffers::NativeTable 
 {
@@ -28,6 +30,7 @@ struct test_simple_struct : public flatbuffers::NativeTable
     struct simpliest * sp;
     rString id;
     rString testString;
+    std::vector<int, SAllocator<int> > testVector;
 };
   
 int main(int argc, char const *argv[])
@@ -50,6 +53,8 @@ int main(int argc, char const *argv[])
     std::cout << "Value of sp->bar_ is " << mt->sp->bar_ << std::endl;
     std::cout << "Value of id is " << mt->id << std::endl;
     std::cout << "Value of testString is " << mt->testString << std::endl;
+    std::cout << "Value of testVector[0] is " << mt->testVector.at(0) << std::endl;
+    std::cout << "Value of testVector[1] is " << mt->testVector.at(1) << std::endl;
     mt->Close();
 
     delete memory_manager;

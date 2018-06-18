@@ -101,9 +101,12 @@ class RampBuilder {
     if (rdma_memory == nullptr)
       return nullptr;
     
-    root_type * root = new (rdma_memory->vaddr+sizeof(RampAlloc)) T(manager_, rdma_memory->vaddr, rdma_memory->size);
+    root_type * root = (root_type *)(rdma_memory->vaddr+sizeof(RampAlloc));
+    root->manager_ = manager_;
     root->rdma_memory = rdma_memory;
+    root->start_ = rdma_memory->vaddr;
     return root;
+    //return (root_type *)(rdma_memory->vaddr+sizeof(RampAlloc));
   }
 
  private:

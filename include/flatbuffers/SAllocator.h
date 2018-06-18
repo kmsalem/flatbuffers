@@ -23,7 +23,7 @@ public:
     using size_type = std::size_t;
 
     using propagate_on_container_copy_assignment = std::false_type;
-    using propagate_on_container_move_assignment = std::false_type;
+    using propagate_on_container_move_assignment = std::true_type;
     using propagate_on_container_swap            = std::false_type;
     using is_always_equal                        = std::is_empty<SAllocator>;
 
@@ -37,14 +37,18 @@ public:
     // Constructor.
     SAllocator(RampAlloc *pool) noexcept : pool_(pool) {}
 
-    SAllocator() noexcept : debug_level(3), pool_(NULL) {}
+    SAllocator() noexcept : debug_level(3), pool_(NULL) {
+        //printf("Empty allocator is called\n");
+    }
 
     template <class U>
     SAllocator(SAllocator<U> const& a) noexcept :
         pool_(a.pool_) {}
 
     pointer allocate(size_type num) {
-        if (pool_ == NULL) { return this->temp_allocate(num); }
+        if (pool_ == NULL) { 
+            printf("allocator didn't do correctly\n");
+            return this->temp_allocate(num); }
         return static_cast<pointer>(
             pool_->allocate(num * sizeof(value_type)));
     }
