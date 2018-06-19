@@ -84,7 +84,6 @@ public:
 
 private:
     RampAlloc *pool_;
-
 public:
     // Constructor.
     SAllocator(RampAlloc *pool) noexcept : pool_(pool) {}
@@ -100,7 +99,8 @@ public:
     pointer allocate(size_type num) {
         if (pool_ == NULL) { 
             printf("allocator didn't do correctly\n");
-            return this->temp_allocate(num); }
+            return this->temp_allocate(num); 
+        }
         return static_cast<pointer>(
             pool_->allocate(num * sizeof(value_type)));
     }
@@ -160,5 +160,6 @@ bool operator!=(SAllocator<T> const& x, SAllocator<U> const& y) noexcept {
 }
 
 typedef basic_string<char, std::char_traits<char>, SAllocator<char>> rString;
+template <typename T> using Pointer = T *;
 
 #endif // __SALLOCATOR_H__
