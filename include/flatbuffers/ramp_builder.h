@@ -13,8 +13,11 @@
 #define is_aligned(POINTER, BYTE_COUNT) \
     (((uintptr_t)(const void *)(POINTER)) % (BYTE_COUNT) == 0)
 
-// this is just an easy allocator using the same machenism as mempool in RDMA-migration-system 
-
+/*
+  RampBuilder is used to create a new "domain" (= RAMP segment), 
+  and create a mempool as well as root object in this domain.
+  Note: a builder can create one or more root objects (RAMP segments)
+*/
 template<class T>
 class RampBuilder {
  public:
@@ -22,8 +25,8 @@ class RampBuilder {
 
   RampBuilder(RDMAMemoryManager *manager) : manager_(manager) {}
 
-  /// Create an object inside RDMA segment and initialize the allocator
-  root_type * CreateRoot(size_t size) {
+    /// Create an object inside RDMA segment and initialize the allocator
+    root_type * CreateRoot(size_t size) {
     void * memory = manager_->allocate(size);
     assert(is_aligned(memory,8));
 
@@ -42,8 +45,8 @@ class RampBuilder {
     //root->start_ = (void *)memory;
     //root->size_ = size;  // need to see if this worth modification to compiler
 
-    //SAllocator<root_type> ra = SAllocator<root_type>(allocator);
     /*
+    SAllocator<root_type> ra = SAllocator<root_type>(allocator);
     using rebound_alloc_t =
             typename SAllocator<root_type>::template rebind<rString>::other;
     auto rebound = rebound_alloc_t(allocator);
@@ -64,7 +67,6 @@ class RampBuilder {
     root->rdma_memory = rdma_memory;
     root->start_ = rdma_memory->vaddr;
     return root;
-    //return (root_type *)(rdma_memory->vaddr+sizeof(RampAlloc));
   }
 
  private:

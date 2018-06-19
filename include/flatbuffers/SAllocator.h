@@ -2,8 +2,11 @@
 #define _SALLOCATOR_H_
 
 #include <string>
-//#include "ramp_builder.h"
 
+/*
+    RampAlloc is actually a memory pool, 
+      which stores relevant information about available memory
+*/ 
 class RampAlloc {
  public:
   explicit RampAlloc(void *pool_addr, 
@@ -18,27 +21,24 @@ class RampAlloc {
             size(size) {}
   
   void* allocate(size_t bytes) noexcept {
-    
-    // LogInfo("allocate(bytes = %p) called on %p", (void*) bytes, this);
-
     // For now, we'll use the next free address.
     void* result = unused_past;
     // But before we return, update the next free address.
     unused_past = (void*) ((char*)unused_past + bytes);
-    LogAssert((uintptr_t)unused_past < (uintptr_t)((char*)addr + size), "OUT OF MEMORY");
+    LogAssert((uintptr_t)unused_past < (uintptr_t)((char*)addr + size), "OUT OF MEMORY");  // Error checking
     return result;
   }
 
   // deallocate actually does nothing for now
   void deallocate(void* addr, size_t bytes) noexcept {
-    LogInfo("deallocate(addr = %p, bytes = %p)",addr, (void*) bytes);
+    LogInfo("deallocate(addr = %p, bytes = %p)", addr, (void*) bytes);
   }
 
-  /**
+private:
+  /*
     * MemoryPool metadata and state.
     * The reason this may be different from the actual addr and size of the 
     * underlying memory is because we may choose to embed information in the memory address themselves
-    * this will not be required if we are using zookeeper
   */
   void* pool_addr;
   size_t pool_size;

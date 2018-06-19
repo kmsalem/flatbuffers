@@ -22,7 +22,6 @@
 #include "distributed-allocator/RDMAMemory.hpp"
 #include "flatbuffers/SAllocator.h"
 #include <vector>
-#include <scoped_allocator>
 
 namespace flatbuffers {
 // Wrapper for uoffset_t to allow safe template specialization.
@@ -2230,12 +2229,17 @@ struct NativeTable {
  public:
   explicit NativeTable() {}
 
-  // this is the constructor fot root type only
+  // This constructor is only for root type
+  // any other user-defined structure inside root object should be created by CreateObj() method
   explicit NativeTable(RDMAMemoryManager *manager, 
                        void * start, 
                        size_t size): manager_(manager), 
                                      start_(start), 
                                      size_(size) {}
+
+  /*
+    Methods for creating data inside native structures
+  */
 
   rString CreaterString(const char *str, size_t len) {
     RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
@@ -2316,9 +2320,8 @@ struct NativeTable {
   RDMAMemoryManager * manager_;
   RDMAMemory * rdma_memory;
 
-  // start and size are only needed when root is just created, at which time rdma_memory is not initialized
-  void * start_;
-  size_t size_;
+  void * start_; // start address of RAMP segment the object is in (where mempool info is stored)
+  size_t size_; // size of RDMA segment
 };
 
 /// @brief Function types to be used with resolving hashes into objects and
