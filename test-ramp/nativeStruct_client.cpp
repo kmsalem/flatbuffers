@@ -31,6 +31,7 @@ struct test_simple_struct : public flatbuffers::NativeTable
     rString testString;
     std::vector<int, SAllocator<int> > testVector;
     std::vector<struct simpliest *, SAllocator<struct simpliest *> > testVectorOfPointer;
+    std::vector<rString, SAllocator<rString> > testVectorOfString;
 };
   
 int main(int argc, char const *argv[])
@@ -57,6 +58,8 @@ int main(int argc, char const *argv[])
     std::cout << "Value of testVector[1] is " << mt->testVector.at(1) << std::endl;
     std::cout << "Value of testVectorOfPointer[0] foo is " << mt->testVectorOfPointer[0]->foo_ << std::endl;
     std::cout << "Value of testVectorOfPointer[1] bar is " << mt->testVectorOfPointer[1]->bar_ << std::endl;
+    std::cout << "Value of testVectorOfString is " << mt->testVectorOfString[0];
+    std::cout << mt->testVectorOfString[1] << mt->testVectorOfString[2] << mt->testVectorOfString[3] << endl;
     mt->Close();
 
     delete memory_manager;

@@ -33,6 +33,7 @@ struct test_simple_struct : public flatbuffers::NativeTable
     rString testString;
     std::vector<int, SAllocator<int> > testVector;
     std::vector<struct simpliest *, SAllocator<struct simpliest *> > testVectorOfPointer;
+    std::vector<rString, SAllocator<rString> > testVectorOfString;
 };
 
 int main(int argc, char* argv[]) {
@@ -98,6 +99,17 @@ int main(int argc, char* argv[]) {
     mt->testVectorOfPointer.push_back(s2);
     mt->testVectorOfPointer[0]->foo_ = 1111;
     mt->testVectorOfPointer[1]->bar_ = 5;
+
+    mt->testVectorOfString = mt->CreaterVector<rString>();
+    rString r1 = mt->CreaterString("what ");
+    rString r2 = mt->CreaterString("a ");
+    rString r3 = mt->CreaterString("good ");
+    rString r4 = mt->CreaterString("day ");
+
+    mt->testVectorOfString.push_back(r1);
+    mt->testVectorOfString.push_back(r2);
+    mt->testVectorOfString.push_back(r3);
+    mt->testVectorOfString.push_back(r4);
 
     mt->Prepare(1);
     while(!mt->PollForAccept()) {}
