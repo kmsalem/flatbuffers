@@ -30,7 +30,7 @@ class RampBuilder {
     void * memory = manager_->allocate(size);
     assert(is_aligned(memory,8));
 
-    // build the allocator
+    // Build the allocator
     void *pool_addr = (void*)((char *)memory+sizeof(root_type)+sizeof(RampAlloc));
     RampAlloc *allocator = new (memory) 
                                 RampAlloc(pool_addr,  
@@ -39,21 +39,12 @@ class RampBuilder {
                                           memory, 
                                           size);
 
-    // create a root object at the start of the segment
-    //root_type * root = new (memory+sizeof(RampAlloc)) T(manager_, (void *)memory, size);
+    // Create a root object at the start of the segment
     root_type * root = new (memory+sizeof(RampAlloc)) T(allocator);
     root->manager_ = manager_;
     root->start_ = (void *)memory;
-    root->size_ = size;  // need to see if this worth modification to compiler
+    root->size_ = size;  // Can we avoid assigning these fields repeatedly?
 
-    /*
-    SAllocator<root_type> ra = SAllocator<root_type>(allocator);
-    using rebound_alloc_t =
-            typename SAllocator<root_type>::template rebind<rString>::other;
-    auto rebound = rebound_alloc_t(allocator);
-    root_type * root = static_cast<root_type *>(rebound.allocate(sizeof(T)));
-    rebound.construct(root, std::forward<Args>(args)...);
-    */
     return root;
   }
 
