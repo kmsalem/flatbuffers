@@ -3,7 +3,7 @@
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
-#include "TestObj_generated.h"
+#include "TestObj_original.h"
 
 #include <unistd.h>
 #include <stdio.h>
