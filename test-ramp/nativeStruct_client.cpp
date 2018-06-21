@@ -15,7 +15,7 @@
 
 struct simpliest : public flatbuffers::NativeTable 
 {
-    using NativeTable::NativeTable;
+    // using NativeTable::NativeTable;
     int foo_;
     int bar_;
 };
@@ -23,7 +23,7 @@ struct simpliest : public flatbuffers::NativeTable
 /// test structure
 struct test_simple_struct : public flatbuffers::NativeTable
 {
-    using NativeTable::NativeTable;
+    // using NativeTable::NativeTable;
     int foo;
     int bar;
     struct simpliest * sp;

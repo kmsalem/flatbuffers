@@ -40,10 +40,11 @@ class RampBuilder {
                                           size);
 
     // create a root object at the start of the segment
-    root_type * root = new (memory+sizeof(RampAlloc)) T(manager_, (void *)memory, size);
-    //root->manager_ = manager_;
-    //root->start_ = (void *)memory;
-    //root->size_ = size;  // need to see if this worth modification to compiler
+    //root_type * root = new (memory+sizeof(RampAlloc)) T(manager_, (void *)memory, size);
+    root_type * root = new (memory+sizeof(RampAlloc)) T(allocator);
+    root->manager_ = manager_;
+    root->start_ = (void *)memory;
+    root->size_ = size;  // need to see if this worth modification to compiler
 
     /*
     SAllocator<root_type> ra = SAllocator<root_type>(allocator);

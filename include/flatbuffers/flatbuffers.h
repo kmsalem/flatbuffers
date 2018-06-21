@@ -2229,6 +2229,7 @@ struct NativeTable {
  public:
   explicit NativeTable() {}
 
+  /* This function is not used any more */
   // This constructor is only for root type
   // any other user-defined structure inside root object should be created by CreateObj() method
   explicit NativeTable(RDMAMemoryManager *manager, 
@@ -2255,10 +2256,15 @@ struct NativeTable {
   T * CreateObj() {
     RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
     void * addr = alloc->allocate(sizeof(T));
-    T *result = new (addr) T(manager_, start_, size_);
+    //T *result = new (addr) T(manager_, start_, size_);
+    T *result = new (addr) T(alloc);
+    result->manager_ = manager_;
+    result->start_ = start_;
+    result->size_ = size_;
     return result;
   }
 
+  /* This function is not used any more */
   template <typename T>
   std::vector<T, SAllocator<T> > CreaterVector() {
     RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);

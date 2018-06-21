@@ -16,24 +16,32 @@
 
 struct simpliest : public flatbuffers::NativeTable 
 {
-    using NativeTable::NativeTable;
+    //using NativeTable::NativeTable;
     int foo_;
     int bar_;
+    simpliest(RampAlloc * alloc): foo_(0), bar_(0) {}
 };
 
 /// test structure
 struct test_simple_struct : public flatbuffers::NativeTable
 {
-    using NativeTable::NativeTable;
-    test_simple_struct():foo(0), bar(0) {}
+    // using NativeTable::NativeTable;
     int foo;
     int bar;
     struct simpliest * sp;
     rString id;
     rString testString;
-    std::vector<int, SAllocator<int> > testVector;
+    std::vector<int, SAllocator<int> > testVector;   // we still need the allocator for primitive type
+    //std::vector<int> testVector;
     std::vector<struct simpliest *, SAllocator<struct simpliest *> > testVectorOfPointer;
     std::vector<rString, SAllocator<rString> > testVectorOfString;
+    test_simple_struct(RampAlloc * alloc): foo(0), 
+                                           bar(0), 
+                                           id(SAllocator<rString>(alloc)),
+                                           testString(SAllocator<rString>(alloc)),
+                                           testVector(SAllocator<int>(alloc)),
+                                           testVectorOfPointer(SAllocator<struct simpliest *>(alloc)),
+                                           testVectorOfString(SAllocator<rString>(alloc)) {}
 };
 
 int main(int argc, char* argv[]) {
@@ -53,7 +61,7 @@ int main(int argc, char* argv[]) {
     RampAlloc *alloc = (RampAlloc *)((uint8_t *)mt->start_);
 
     printf("Address of the object is %p \n", mt);
-    printf("1.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("1.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     std::cout << "Address of foo is " << &mt->foo << std::endl;
     std::cout << sizeof(test_simple_struct) << std::endl;
@@ -61,38 +69,43 @@ int main(int argc, char* argv[]) {
 
     mt->sp = mt->CreateObj<simpliest>();
     mt->sp->foo_ = 101;
-    printf("2.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("2.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    mt->id = mt->CreaterString("hello");
+    /* Create strings */
 
+    //mt->id = mt->CreaterString("hello");
+    mt->id = "hello";
     std::cout << "My id is " << mt->id << std::endl;
     printf("Address of my id is %p \n", mt->id);
-    printf("3.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("3.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     mt->id = "hi thereaaaaaaa";  // this works fine
     //mt->id = "hi there there there there there there there";  // will not cause segmeatation fault; why?
     //mt->id = mt->CreaterString("hi there there there there there there there"); // Allocator will assign the same space as above line
     std::cout << "My id is " << mt->id << std::endl;
-    printf("4.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("4.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     printf("Adrress of test string a is %p \n", &mt->testString);
     printf("Adrress of test string a is %p \n", &(*(mt->testString).begin()));
-    mt->testString = mt->CreaterString("hey this is my test string");
+    //mt->testString = mt->CreaterString("hey this is my test string");
+    mt->testString = "hey this is my test string";
     printf("Adrress of test string a is %p \n", &(*(mt->testString).begin()));
     std::cout << "My testString is: " << mt->testString << std::endl;
-    printf("5.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("5.unused_past stored in allocator is %p \n", alloc->unused_past);
     mt->testString = mt->testString + " this is appended string";
 
-    mt->testVector = mt->CreaterVector<int>();
+
+    /* Create vectors */
+    //mt->testVector = mt->CreaterVector<int>();
 
     mt->testVector.push_back(11);
     std::cout << "Value of testVector[0] is " << mt->testVector.at(0) << std::endl;
     mt->testVector.push_back(13);
     printf("Address of testVector[0] is %p \n", &mt->testVector[0]);
     std::cout << "Value of testVector[1] is " << mt->testVector.at(1) << std::endl;
-    printf("6.unused_past stored in allocator is %p \n", alloc->unused_past);
+    //printf("6.unused_past stored in allocator is %p \n", alloc->unused_past);
 
-    mt->testVectorOfPointer = mt->CreaterVector<struct simpliest *>();
+    //mt->testVectorOfPointer = mt->CreaterVector<struct simpliest *>();
     struct simpliest * s1 = mt->CreateObj<simpliest>();
     struct simpliest * s2 = mt->CreateObj<simpliest>();
     mt->testVectorOfPointer.push_back(s1);
@@ -100,7 +113,7 @@ int main(int argc, char* argv[]) {
     mt->testVectorOfPointer[0]->foo_ = 1111;
     mt->testVectorOfPointer[1]->bar_ = 5;
 
-    mt->testVectorOfString = mt->CreaterVector<rString>();
+    //mt->testVectorOfString = mt->CreaterVector<rString>();
     rString r1 = mt->CreaterString("what ");
     rString r2 = mt->CreaterString("a ");
     rString r3 = mt->CreaterString("good ");
