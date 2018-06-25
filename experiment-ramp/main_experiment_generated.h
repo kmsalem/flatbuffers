@@ -11,10 +11,8 @@ namespace Experiment {
 
 struct Vec3;
 
-struct Main;
 struct MainT;
 
-struct Child;
 struct ChildT;
 
 FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {

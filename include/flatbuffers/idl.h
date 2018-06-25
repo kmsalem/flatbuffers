@@ -372,6 +372,7 @@ struct IDLOptions {
   bool skip_unexpected_fields_in_json;
   bool generate_name_strings;
   bool generate_object_based_api;
+  bool generate_ramp_api;
   std::string cpp_object_api_pointer_type;
   std::string cpp_object_api_string_type;
   bool gen_nullable;
@@ -437,6 +438,7 @@ struct IDLOptions {
         skip_unexpected_fields_in_json(false),
         generate_name_strings(false),
         generate_object_based_api(false),
+        generate_ramp_api(false),
         cpp_object_api_pointer_type("std::unique_ptr"),
         gen_nullable(false),
         object_suffix("T"),

@@ -225,7 +225,14 @@ class CppGenerator : public BaseGenerator {
       const auto &struct_def = **it;
       if (!struct_def.generated) {
         SetNameSpace(struct_def.defined_namespace);
-        code_ += "struct " + Name(struct_def) + ";";
+        if (parser_.opts.generate_ramp_api) {
+          code_ += "struct " +
+                   NativeName(Name(struct_def), &struct_def, parser_.opts) +
+                   ";";
+        } else {
+          code_ += "struct " + Name(struct_def) + ";";
+        }
+
         if (parser_.opts.generate_object_based_api && !struct_def.fixed) {
           code_ += "struct " +
                    NativeName(Name(struct_def), &struct_def, parser_.opts) +
@@ -274,6 +281,19 @@ class CppGenerator : public BaseGenerator {
         GenTable(struct_def);
       }
     }
+    
+    // No additional function/methods for ramp api
+    if (parser_.opts.generate_ramp_api) {
+      if (cur_name_space_) SetNameSpace(nullptr);
+
+      // Close the include guard.
+      code_ += "#endif  // " + include_guard;
+
+      const auto file_path = GeneratedFileName(path_, file_name_);
+      const auto final_code = code_.ToString();
+      return SaveFile(file_path.c_str(), final_code, false);
+    }
+
     for (auto it = parser_.structs_.vec.begin();
          it != parser_.structs_.vec.end(); ++it) {
       const auto &struct_def = **it;
@@ -434,7 +454,7 @@ class CppGenerator : public BaseGenerator {
         code_ += "";
       }
     }
-
+     
     if (cur_name_space_) SetNameSpace(nullptr);
 
     // Close the include guard.
@@ -553,14 +573,19 @@ class CppGenerator : public BaseGenerator {
   const std::string NativeString(const FieldDef *field) {
     auto attr = field ? field->attributes.Lookup("cpp_str_type") : nullptr;
     auto &ret = attr ? attr->constant : parser_.opts.cpp_object_api_string_type;
-    if (ret.empty()) { return "std::string"; }
+    if (ret.empty()) { 
+      if (parser_.opts.generate_ramp_api) return "rString";
+      return "std::string"; 
+    }
     return ret;
   }
 
   std::string GenTypeNativePtr(const std::string &type, const FieldDef *field,
                                bool is_constructor) {
     auto &ptr_type = PtrType(field);
-    if (ptr_type != "naked") {
+    if (parser_.opts.generate_ramp_api) {
+      return type + " *";
+    } else if (ptr_type != "naked") {
       return ptr_type + "<" + type + ">";
     } else if (is_constructor) {
       return "";
@@ -591,8 +616,10 @@ class CppGenerator : public BaseGenerator {
               type.struct_def->attributes.Lookup("native_custom_alloc");
           return "std::vector<" + type_name + "," +
                  native_custom_alloc->constant + "<" + type_name + ">>";
-        } else
+        } else {
+          if (parser_.opts.generate_ramp_api) return "std::vector<" + type_name + ", SAllocator<" +type_name +"> >";
           return "std::vector<" + type_name + ">";
+        }
       }
       case BASE_TYPE_STRUCT: {
         auto type_name = WrapInNameSpace(*type.struct_def);
@@ -1387,7 +1414,7 @@ class CppGenerator : public BaseGenerator {
           (cpp_type ? (field.value.type.base_type == BASE_TYPE_VECTOR
                       ? "std::vector<" + GenTypeNativePtr(cpp_type->constant, &field, false) + "> "
                       : GenTypeNativePtr(cpp_type->constant, &field, false))
-                    : type + " ");
+                    : type + " ");   // in which case full_type will be called?
       code_.SetValue("FIELD_TYPE", full_type);
       code_.SetValue("FIELD_NAME", Name(field));
       code_ += "  {{FIELD_TYPE}}{{FIELD_NAME}};";
@@ -1423,7 +1450,7 @@ class CppGenerator : public BaseGenerator {
         } else if (cpp_type && field.value.type.base_type != BASE_TYPE_VECTOR) {
           if (!initializer_list.empty()) { initializer_list += ",\n        "; }
           initializer_list += Name(field) + "(0)";
-        }
+        } 
       }
     }
     if (!initializer_list.empty()) {
@@ -1435,6 +1462,55 @@ class CppGenerator : public BaseGenerator {
     code_.SetValue("INIT_LIST", initializer_list);
 
     code_ += "  {{NATIVE_NAME}}(){{INIT_LIST}} {";
+    code_ += "  }";
+  }
+
+  void GenRampConstructor(const StructDef &struct_def) {
+    std::string initializer_list;
+    for (auto it = struct_def.fields.vec.begin();
+         it != struct_def.fields.vec.end(); ++it) {
+      const auto &field = **it;
+      if (!field.deprecated &&  // Deprecated fields won't be accessible.
+          field.value.type.base_type != BASE_TYPE_UTYPE) {
+        auto cpp_type = field.attributes.Lookup("cpp_type");
+        auto native_default = field.attributes.Lookup("native_default");
+        // Scalar types get parsed defaults, raw pointers get nullptrs.
+        if (IsScalar(field.value.type.base_type)) {
+          if (!initializer_list.empty()) { initializer_list += ",\n        "; }
+          initializer_list += Name(field);
+          initializer_list += "(" + (native_default ? std::string(native_default->constant) : GetDefaultScalarValue(field, true)) + ")";
+        } else if (field.value.type.base_type == BASE_TYPE_STRUCT) {
+          if (IsStruct(field.value.type)) {
+            if (native_default) {
+              if (!initializer_list.empty()) {
+                initializer_list += ",\n        ";
+              }
+              initializer_list +=
+                  Name(field) + "(" + native_default->constant + ")";
+            }
+          }
+        } else if (cpp_type && field.value.type.base_type != BASE_TYPE_VECTOR) {  // what is this checking for?
+          if (!initializer_list.empty()) { initializer_list += ",\n        "; }
+          initializer_list += Name(field) + "(0)";
+          // Add initialization list case for vector and string
+        } else if (field.value.type.base_type == BASE_TYPE_STRING) {
+          if (!initializer_list.empty()) initializer_list += ",\n        ";
+          initializer_list += Name(field) + "(SAllocator<char>(alloc))";
+        } else if (field.value.type.base_type == BASE_TYPE_VECTOR) {
+          if (!initializer_list.empty()) initializer_list += ",\n        ";
+          initializer_list += Name(field) + "(SAllocator<"+ GenTypeNative(field.value.type.VectorType(), true, field) +">(alloc))";
+        } 
+      }
+    }
+    if (!initializer_list.empty()) {
+      initializer_list = "\n      : " + initializer_list;
+    }
+
+    code_.SetValue("NATIVE_NAME",
+                   NativeName(Name(struct_def), &struct_def, parser_.opts));
+    code_.SetValue("INIT_LIST", initializer_list);
+
+    code_ += "  {{NATIVE_NAME}}(RampAlloc *alloc){{INIT_LIST}} {";
     code_ += "  }";
   }
 
@@ -1469,6 +1545,23 @@ class CppGenerator : public BaseGenerator {
     }
     GenOperatorNewDelete(struct_def);
     GenDefaultConstructor(struct_def);
+    code_ += "};";
+    code_ += "";
+  }
+
+  void GenRampNativeTable(const StructDef &struct_def) {
+    const auto native_name =
+        NativeName(Name(struct_def), &struct_def, parser_.opts);
+    code_.SetValue("STRUCT_NAME", Name(struct_def));
+    code_.SetValue("NATIVE_NAME", native_name);
+    code_ += "struct {{NATIVE_NAME}} : public flatbuffers::NativeTable {";
+    
+    for (auto it = struct_def.fields.vec.begin();
+         it != struct_def.fields.vec.end(); ++it) {
+      GenMember(**it);
+    }
+
+    GenRampConstructor(struct_def);
     code_ += "};";
     code_ += "";
   }
@@ -1537,6 +1630,12 @@ class CppGenerator : public BaseGenerator {
 
   // Generate an accessor struct, builder structs & function for a table.
   void GenTable(const StructDef &struct_def) {
+    if (parser_.opts.generate_ramp_api) {
+      GenRampNativeTable(struct_def);
+      //GenNativeTable(struct_def);
+      return;
+    }
+
     if (parser_.opts.generate_object_based_api) { GenNativeTable(struct_def); }
 
     // Generate an accessor struct, with methods of the form:

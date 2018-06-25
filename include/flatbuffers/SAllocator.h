@@ -161,6 +161,5 @@ bool operator!=(SAllocator<T> const& x, SAllocator<U> const& y) noexcept {
 
 // Will check later if we can avoid doing this
 typedef basic_string<char, std::char_traits<char>, SAllocator<char>> rString;
-template <typename T> using rPointer = T *;
 
 #endif // __SALLOCATOR_H__
