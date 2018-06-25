@@ -45,13 +45,14 @@ inline const char *EnumNameGender(Gender e) {
 }
 
 struct PersonT : public flatbuffers::NativeTable {
-  using NativeTable::NativeTable;
-  typedef Person TableType;
+  //using NativeTable::NativeTable;
+  typedef Person TableType;  // we dont need this 
   rString name;
   Gender gender;
   int32_t age;
-  PersonT()
-      : gender(static_cast<Gender>(0)),
+  PersonT(RampAlloc *alloc)
+      : name(SAllocator<char>(alloc)),
+        gender(static_cast<Gender>(0)),
         age(0) {
   }
 };
@@ -136,12 +137,13 @@ inline flatbuffers::Offset<Person> CreatePersonDirect(
 flatbuffers::Offset<Person> CreatePerson(flatbuffers::FlatBufferBuilder &_fbb, const PersonT *_o, const flatbuffers::rehasher_function_t *_rehasher = nullptr);
 */
 struct ClassT : public flatbuffers::NativeTable {
-  using NativeTable::NativeTable;
+  // using NativeTable::NativeTable;
   typedef Class TableType;
   rString name;
-  std::vector<Pointer<PersonT>, SAllocator<Pointer<PersonT> > > students;   // type of vector is modified manually 
-  Pointer<PersonT> teacher;
-  ClassT() {
+  std::vector<struct PersonT *, SAllocator<struct PersonT * > > students;   // type of vector is modified manually 
+  struct PersonT * teacher;
+  ClassT(RampAlloc *alloc) : name(SAllocator<char>(alloc)),
+                             students(SAllocator<struct PersonT *>(alloc)) {
   }
 };
 /*

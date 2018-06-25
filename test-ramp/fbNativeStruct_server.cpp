@@ -3,7 +3,7 @@
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
-#include "TestObj_api.h"
+#include "TestObj_generated.h"
 #include "flatbuffers/ramp_builder.h"
 #include "flatbuffers/SAllocator.h"
 
@@ -31,10 +31,12 @@ int main(int argc, char* argv[]) {
 
     struct PersonT * s1 = c->CreateObj<struct PersonT>();
     struct PersonT * s2 = c->CreateObj<struct PersonT>();
-    s1->name = s1->CreaterString("Yilia");
-    s2->name = s2->CreaterString("Bob");
+    //s1->name = s1->CreaterString("Yilia");
+    //s2->name = s2->CreaterString("Bob");
+    s1->name = "Yilia";
+    s2->name = "Bob";
 
-    c->students = c->CreaterVector<struct PersonT *>();
+    //c->students = c->CreaterVector<struct PersonT *>();
     c->students.push_back(s1);
     c->students.push_back(s2);
 

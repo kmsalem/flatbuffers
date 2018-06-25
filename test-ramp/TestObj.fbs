@@ -4,16 +4,17 @@ attribute "priority";
 
 enum Gender:byte (bit_flags) { Male = 0, Female = 1, }
 
-table Person {
+table Person(native_custom_alloc:"SAllocator") {
   name:string;
   gender:Gender;
   age:int;
 }
 
-table Class {
-  name:string (id: 0);
-  students:[Person] (id: 1);
-  teacher:Person (id: 2);
+table Class(native_custom_alloc:"SAllocator") {
+  name:string;
+  students:[Person];
+  teacher:Person;
+  scores:[int];
 }
 
 root_type Class;
