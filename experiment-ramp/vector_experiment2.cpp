@@ -28,7 +28,7 @@ using namespace Main::Experiment;
 int main(int argc, char* argv[]) {
     if (argc < 4) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./vector_experiment1 path_to_config id container_size(in bytes) bucket_size_in_milli_seconds" << std::endl;
+        std::cerr << "./vector_experiment2 path_to_config id container_size(in bytes) bucket_size_in_milli_seconds" << std::endl;
         return 1;
     }
 
@@ -47,11 +47,10 @@ int main(int argc, char* argv[]) {
 
     int64_t key = 0;
     //number of keys
-    /* Error would happen if we divide by size of integer (no experiment result)
+    /* Error would happen if we divide a larger number (no experiment result)
         Page on: in sigsegv_advance : memory not found
-        Page off: segmentation fault 
-       If we divide by 8: OUT of MEMORY error on sending side but can still get experiment result*/
-    int num_entries = (size*0.60)/(12);
+        Page off: segmentation fault */
+    int num_entries = (size*0.60)/(88);
 
     //uniform number generator
     const int range_from  = 0;
@@ -64,18 +63,23 @@ int main(int argc, char* argv[]) {
     struct MainT *m;  // target object 
     if (id == 0) {
         m = mb->CreateRoot(size);
-        
+
+        std::string value = "";
+        while(value.size() != 32) {
+            value.append("a");
+        }
+        const char *str = value.c_str();
         // build the data
         while (key < num_entries) {
-            m->testVector1.push_back((int32_t)key);
+            m->testVector2.push_back(m->CreaterString(str));
             key++;
         }
 
         // warmup?
         volatile int access = 0;
-        int32_t val;
+        rString val;
         while (access < 4000000) {
-            val = m->testVector1[distr(generator)];
+            val = m->testVector2[distr(generator)];
             access++;
         }
 
@@ -92,7 +96,7 @@ int main(int argc, char* argv[]) {
 
         while ((m = mb->PollForRoot()) == nullptr) {}
 
-        int32_t val;
+        rString val;
         double offset = 0.0;
         #if !PAGING
             // auto it = bins.begin();
@@ -130,9 +134,9 @@ int main(int argc, char* argv[]) {
             }
 
             auto s1 = std::chrono::high_resolution_clock::now();
-            val = m->testVector1[distr(generator)];   // where read data happens?
+            val = m->testVector2[distr(generator)];   // where read data happens?
             auto e1 = std::chrono::high_resolution_clock::now();
-            //if (val > 2000 && bin == 1) printf("---------------------------- val read is %d ------------------------\n", val);
+            //if (bin == 1) std::cout << "---------------------------- val read is " << val << " ------------------------" << std::endl;
             bins[bin].push_back(std::chrono::duration_cast<std::chrono::nanoseconds>(e1 - s1).count());
 
             #if PAGING
