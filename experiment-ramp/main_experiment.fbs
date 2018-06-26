@@ -1,18 +1,18 @@
 namespace Main.Experiment;
 
-struct Vec3 {
+table Vec3 {
   x:float;
   y:float;
   z:float;
 }
 
-table Main(native_custom_alloc:"SAllocator") {
+table Main {
   testVector1:[int];
   testVector2:[string];
   testVector3:[Child];
 }
 
-table Child(native_custom_alloc:"SAllocator") {
+table Child {
   name:string;
   pos:Vec3; 
 }

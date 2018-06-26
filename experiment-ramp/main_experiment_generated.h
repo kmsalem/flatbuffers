@@ -9,43 +9,27 @@
 namespace Main {
 namespace Experiment {
 
-struct Vec3;
+struct Vec3T;
 
 struct MainT;
 
 struct ChildT;
 
-FLATBUFFERS_MANUALLY_ALIGNED_STRUCT(4) Vec3 FLATBUFFERS_FINAL_CLASS {
- private:
-  float x_;
-  float y_;
-  float z_;
-
- public:
-  Vec3() {
-    memset(this, 0, sizeof(Vec3));
-  }
-  Vec3(float _x, float _y, float _z)
-      : x_(flatbuffers::EndianScalar(_x)),
-        y_(flatbuffers::EndianScalar(_y)),
-        z_(flatbuffers::EndianScalar(_z)) {
-  }
-  float x() const {
-    return flatbuffers::EndianScalar(x_);
-  }
-  float y() const {
-    return flatbuffers::EndianScalar(y_);
-  }
-  float z() const {
-    return flatbuffers::EndianScalar(z_);
+struct Vec3T : public flatbuffers::NativeTable {
+  float x;
+  float y;
+  float z;
+  Vec3T(RampAlloc *alloc)
+      : x(0.0f),
+        y(0.0f),
+        z(0.0f) {
   }
 };
-FLATBUFFERS_STRUCT_END(Vec3, 12);
 
 struct MainT : public flatbuffers::NativeTable {
   std::vector<int32_t, SAllocator<int32_t> > testVector1;
   std::vector<rString, SAllocator<rString> > testVector2;
-  std::vector<ChildT *,SAllocator<ChildT *>> testVector3;
+  std::vector<ChildT *, SAllocator<ChildT *> > testVector3;
   MainT(RampAlloc *alloc)
       : testVector1(SAllocator<int32_t>(alloc)),
         testVector2(SAllocator<rString>(alloc)),
@@ -55,7 +39,7 @@ struct MainT : public flatbuffers::NativeTable {
 
 struct ChildT : public flatbuffers::NativeTable {
   rString name;
-  Vec3 * pos;
+  Vec3T * pos;
   ChildT(RampAlloc *alloc)
       : name(SAllocator<char>(alloc)) {
   }

@@ -266,13 +266,15 @@ class CppGenerator : public BaseGenerator {
 
     // Generate code for all structs, then all tables.
     for (auto it = parser_.structs_.vec.begin();
-         it != parser_.structs_.vec.end(); ++it) {
+      it != parser_.structs_.vec.end(); ++it) {
       const auto &struct_def = **it;
       if (struct_def.fixed && !struct_def.generated) {
+        FLATBUFFERS_ASSERT(!parser_.opts.generate_ramp_api); // Ramp API does not support struct. Instead, please always use Table
         SetNameSpace(struct_def.defined_namespace);
         GenStruct(struct_def);
       }
     }
+
     for (auto it = parser_.structs_.vec.begin();
          it != parser_.structs_.vec.end(); ++it) {
       const auto &struct_def = **it;
@@ -953,6 +955,8 @@ class CppGenerator : public BaseGenerator {
     }
     code_ += "";
 
+    if (parser_.opts.generate_ramp_api) return;
+
     // Generate an array of all enumeration values
     auto num_fields = NumToString(enum_def.vals.vec.size());
     code_ += "inline const {{ENUM_NAME}} (&EnumValues{{ENUM_NAME}}())[" + num_fields +
@@ -1632,7 +1636,6 @@ class CppGenerator : public BaseGenerator {
   void GenTable(const StructDef &struct_def) {
     if (parser_.opts.generate_ramp_api) {
       GenRampNativeTable(struct_def);
-      //GenNativeTable(struct_def);
       return;
     }
 
