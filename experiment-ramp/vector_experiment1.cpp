@@ -3,7 +3,7 @@
 #include "flatbuffers/flatbuffers.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
-#include "main_experiment_generated.h"
+#include "vector_experiment_generated.h"
 #include "flatbuffers/ramp_builder.h"
 #include "flatbuffers/SAllocator.h"
 
