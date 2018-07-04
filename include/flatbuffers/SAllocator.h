@@ -2,7 +2,7 @@
 #define _SALLOCATOR_H_
 
 #include <string>
-
+#include <unordered_map>
 /*
     RampAlloc is actually a memory pool, 
       which stores relevant information about available memory
@@ -34,21 +34,24 @@ class RampAlloc {
     LogInfo("deallocate(addr = %p, bytes = %p)", addr, (void*) bytes);
   }
 
+  void* pool_addr;
+  size_t pool_size;
+  void* unused_past; // make it public temporarily for debug usage 
 private:
   /*
     * MemoryPool metadata and state.
     * The reason this may be different from the actual addr and size of the 
     * underlying memory is because we may choose to embed information in the memory address themselves
   */
-  void* pool_addr;
-  size_t pool_size;
+//   void* pool_addr;
+//   size_t pool_size;
 
   /**
     * The high watermark for allocated memory, this class implements a
     * simple allocation algorithm by simply pushing the boundary forward, on an
     * RDMA pull, we would only need to pull as much as a unused past
   */
-  void* unused_past;
+  // void* unused_past;
 
   //the actualy size of the rdma memory region
   void* addr;
@@ -161,5 +164,16 @@ bool operator!=(SAllocator<T> const& x, SAllocator<U> const& y) noexcept {
 
 // Will check later if we can avoid doing this
 typedef basic_string<char, std::char_traits<char>, SAllocator<char>> rString;
+template <class key, class value>
+using rMap = std::unordered_map<key, value, hash<key>, equal_to<key>, SAllocator<std::pair<const key, value> > >;
+
+namespace std {
+    template<>
+    struct hash<rString> {
+        size_t operator () (const rString &str) const {
+            return hash<string>{}(std::string(str.data()));
+        }
+    };
+}
 
 #endif // __SALLOCATOR_H__
