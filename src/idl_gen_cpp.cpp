@@ -623,6 +623,13 @@ class CppGenerator : public BaseGenerator {
           return "std::vector<" + type_name + ">";
         }
       }
+      case BASE_TYPE_UNORDERED_MAP: {
+        // this is only for ramp-api use
+        FLATBUFFERS_ASSERT(parser_.opts.generate_ramp_api);
+        const auto value_type = GenTypeNative(type.VectorType(), true, field);
+        const auto key_type = GenTypeNative(type.KeyType(), true, field);
+        return "rMap<" + key_type + ", " + value_type + ">";
+      }
       case BASE_TYPE_STRUCT: {
         auto type_name = WrapInNameSpace(*type.struct_def);
         if (IsStruct(type)) {
@@ -1503,7 +1510,12 @@ class CppGenerator : public BaseGenerator {
         } else if (field.value.type.base_type == BASE_TYPE_VECTOR) {
           if (!initializer_list.empty()) initializer_list += ",\n        ";
           initializer_list += Name(field) + "(SAllocator<"+ GenTypeNative(field.value.type.VectorType(), true, field) +">(alloc))";
-        } 
+        } else if (field.value.type.base_type == BASE_TYPE_UNORDERED_MAP) {
+          if (!initializer_list.empty()) initializer_list += ",\n        ";
+          const auto value_type = GenTypeNative(field.value.type.VectorType(), true, field);
+          const auto key_type = GenTypeNative(field.value.type.KeyType(), true, field);
+          initializer_list +=Name(field) + "(SAllocator<std::pair<const "+ key_type + ", " + value_type + "> >(alloc))";
+        }
       }
     }
     if (!initializer_list.empty()) {

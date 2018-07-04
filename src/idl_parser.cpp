@@ -578,6 +578,26 @@ CheckedError Parser::ParseType(Type &type) {
     } else if (IsIdent("string")) {
       type.base_type = BASE_TYPE_STRING;
       NEXT();
+    } else if (IsIdent("unordered_map")){
+      type.base_type = BASE_TYPE_UNORDERED_MAP;
+      NEXT();
+      EXPECT('(');
+      Type subtype1;
+      ECHECK(ParseType(subtype1));
+      if (!IsScalar(subtype1.base_type) && subtype1.base_type != BASE_TYPE_STRING) {
+        return Error("unsupported key type for map");
+      }
+
+      EXPECT(',')
+      Type subtype2;
+      ECHECK(ParseType(subtype2));
+      if (subtype2.base_type == BASE_TYPE_VECTOR || subtype2.base_type == BASE_TYPE_UNORDERED_MAP) {
+        return Error("nested containers not supported (wrap in table first).");
+      }
+      type = Type(BASE_TYPE_UNORDERED_MAP, subtype2.struct_def, subtype2.enum_def);  // restricts that key cannot be tables
+      type.element = subtype2.base_type;
+      type.key_type = subtype1.base_type;
+      EXPECT(')');
     } else {
       ECHECK(ParseTypeIdent(type));
     }

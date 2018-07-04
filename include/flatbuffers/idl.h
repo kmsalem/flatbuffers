@@ -55,10 +55,11 @@ namespace flatbuffers {
   TD(FLOAT,  "float",  float,    float,  float32, float,  float32) /* begin float */ \
   TD(DOUBLE, "double", double,   double, float64, double, float64) /* end float/scalar */
 #define FLATBUFFERS_GEN_TYPES_POINTER(TD) \
-  TD(STRING, "string", Offset<void>, int, int, StringOffset, int) \
-  TD(VECTOR, "",       Offset<void>, int, int, VectorOffset, int) \
-  TD(STRUCT, "",       Offset<void>, int, int, int, int) \
-  TD(UNION,  "",       Offset<void>, int, int, int, int)
+  TD(STRING,        "string",        Offset<void>, int, int, StringOffset, int) \
+  TD(VECTOR,        "",              Offset<void>, int, int, VectorOffset, int) \
+  TD(STRUCT,        "",              Offset<void>, int, int, int, int) \
+  TD(UNION,         "",              Offset<void>, int, int, int, int) \
+  TD(UNORDERED_MAP, "unordered_map", Offset<void>, int, int, VectorOffset, int) /*vectoroffset is used becase we don't care java*/
 
 // The fields are:
 // - enum
@@ -138,11 +139,13 @@ struct Type {
   }
 
   Type VectorType() const { return Type(element, struct_def, enum_def); }
+  Type KeyType() const { return Type(key_type, nullptr, nullptr); }
 
   Offset<reflection::Type> Serialize(FlatBufferBuilder *builder) const;
 
   BaseType base_type;
-  BaseType element;       // only set if t == BASE_TYPE_VECTOR
+  BaseType element;       // only set if t == BASE_TYPE_VECTOR // may also be used as value type of map
+  BaseType key_type;    // only set if t == BASE_TYPE_MAP
   StructDef *struct_def;  // only set if t or element == BASE_TYPE_STRUCT
   EnumDef *enum_def;      // set if t == BASE_TYPE_UNION / BASE_TYPE_UTYPE,
                           // or for an integral type derived from an enum.
