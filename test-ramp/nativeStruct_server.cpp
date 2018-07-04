@@ -11,8 +11,13 @@
 #include <stdlib.h>
 #include <string.h>
 #include <vector>
-#include <scoped_allocator>
-//typedef std::basic_string<char, std::char_traits<char>, RampAllocator> String;
+#include <unordered_map>
+#include <utility>
+
+struct simple_vector : public flatbuffers::NativeTable {
+    std::vector<int, SAllocator<int> > data;
+    simple_vector(RampAlloc * alloc): data(SAllocator<int>(alloc)) {}
+};
 
 struct simpliest : public flatbuffers::NativeTable 
 {
@@ -20,6 +25,7 @@ struct simpliest : public flatbuffers::NativeTable
     int foo_;
     int bar_;
     simpliest(RampAlloc * alloc): foo_(0), bar_(0) {}
+    simpliest() {}
 };
 
 /// test structure
@@ -31,17 +37,44 @@ struct test_simple_struct : public flatbuffers::NativeTable
     struct simpliest * sp;
     rString id;
     rString testString;
+
     std::vector<int, SAllocator<int> > testVector;   // we still need the allocator for primitive type
     //std::vector<int> testVector;
     std::vector<struct simpliest *, SAllocator<struct simpliest *> > testVectorOfPointer;
-    std::vector<rString, SAllocator<rString> > testVectorOfString;
+    std::vector<rString, SAllocator<rString> > testVectorOfrString;
+    std::vector<std::string, SAllocator<std::string> > testVectorOfString;  //this does work, why?
+    std::vector<struct simple_vector *, SAllocator<struct simple_vector *> > testVectorOfVector;
+
+    std::unordered_map<int, int, hash<int>, equal_to<int>, SAllocator<pair<const int, int> > > testMapInt;
+    //std::unordered_map<rString, int, std::hash<rString>, std::equal_to<rString>, SAllocator<std::pair<const rString, int> > > testMaprString;
+    std::unordered_map<int, rString, hash<int>, equal_to<int>, SAllocator<pair<const int, rString> > > testMapIntrStr;
+    
+    //std::unordered_map<std::string, int, std::hash<std::string>, std::equal_to<std::string>, SAllocator<std::pair<const std::string, int> > > testMapString;
+    std::unordered_map<rString, int, hash<rString>, equal_to<rString>, SAllocator<pair<const rString, int> > > testMapString;
+    //std::unordered_map<rString, int> testMapString;  // why this does not require custom hash and equal to
+    //std::unordered_map<std::string, std::vector<int, SAllocator<int> >, std::hash<std::string>, std::equal_to<std::string>, SAllocator<std::pair<const std::string, std::vector<int, SAllocator<int> > > > > testMapVec;
+
+    //std::unordered_map<std::string, simple_vector *, std::hash<std::string>, std::equal_to<std::string>, SAllocator<std::pair<const std::string, simple_vector *> > > testMapObj;
+    std::unordered_map<int, struct simple_vector *, hash<int>, equal_to<int>, SAllocator<pair<const int, struct simple_vector *> > > testMapObj;
+    std::unordered_map<int, struct simpliest *, hash<int>, equal_to<int>, SAllocator<pair<const int, struct simpliest *> > > testMapTemp;
     test_simple_struct(RampAlloc * alloc): foo(0), 
                                            bar(0), 
                                            id(SAllocator<rString>(alloc)),
                                            testString(SAllocator<rString>(alloc)),
+
                                            testVector(SAllocator<int>(alloc)),
                                            testVectorOfPointer(SAllocator<struct simpliest *>(alloc)),
-                                           testVectorOfString(SAllocator<rString>(alloc)) {}
+                                           testVectorOfrString(SAllocator<rString>(alloc)),
+                                           testVectorOfString(SAllocator<std::string>(alloc)),
+                                           testVectorOfVector(SAllocator<struct simple_vector *>(alloc)),
+
+                                           testMapInt(SAllocator<std::pair<const int, int> >(alloc)),
+                                           testMapIntrStr(SAllocator<std::pair<const int, rString> >(alloc)),
+                                           testMapString(SAllocator<std::pair<const rString, int> >(alloc)),
+                                           //testMapVec(SAllocator<std::pair<const std::string, std::vector<int, SAllocator<int> > > >(alloc)),
+                                           testMapObj(SAllocator<std::pair<const int, struct simple_vector *> >(alloc)),
+                                           testMapTemp(SAllocator<std::pair<const int, struct simpliest *> >(alloc))
+                                           {}
 };
 
 int main(int argc, char* argv[]) {
@@ -54,7 +87,7 @@ int main(int argc, char* argv[]) {
 
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], server_id);
     RampBuilder<struct test_simple_struct> *mtb = new RampBuilder<struct test_simple_struct>(memory_manager);
-    struct test_simple_struct *mt = mtb->CreateRoot(1024);  // default allocator will be called
+    struct test_simple_struct *mt = mtb->CreateRoot(5120);
     mt->foo = 4;
     mt->bar = 2;
     
@@ -113,16 +146,70 @@ int main(int argc, char* argv[]) {
     mt->testVectorOfPointer[0]->foo_ = 1111;
     mt->testVectorOfPointer[1]->bar_ = 5;
 
-    //mt->testVectorOfString = mt->CreaterVector<rString>();
-    rString r1 = mt->CreaterString("what ");
-    rString r2 = mt->CreaterString("a ");
-    rString r3 = mt->CreaterString("good ");
-    rString r4 = mt->CreaterString("day ");
+    // rString r1 = mt->CreaterString("what ");
+    // rString r2 = mt->CreaterString("a ");
+    // rString r3 = mt->CreaterString("good ");
+    // rString r4 = mt->CreaterString("day ");
 
-    mt->testVectorOfString.push_back(r1);
-    mt->testVectorOfString.push_back(r2);
-    mt->testVectorOfString.push_back(r3);
-    mt->testVectorOfString.push_back(r4);
+    // mt->testVectorOfrString.push_back(r1);
+    // mt->testVectorOfrString.push_back(r2);
+    // mt->testVectorOfrString.push_back(r3);
+    // mt->testVectorOfrString.push_back(r4);
+    mt->testVectorOfrString.push_back("what ");
+    mt->testVectorOfrString.push_back("a ");
+    mt->testVectorOfrString.push_back("nice ");
+    mt->testVectorOfrString.push_back("what ");
+    printf("7.unused_past stored in allocator is %p \n", alloc->unused_past);
+
+    mt->testVectorOfString.push_back("hello ");
+    mt->testVectorOfString.push_back("world ");
+
+    mt->testVectorOfVector.push_back(mt->CreateObj<simple_vector>());
+    mt->testVectorOfVector[0]->data.push_back(111);
+    mt->testVectorOfVector[0]->data.push_back(999);
+
+    printf("Start building map...\n");
+    mt->testMapInt[0] = 7;
+    mt->testMapInt[10] = 8;
+    
+    mt->testMapIntrStr[22] = "yilia";
+    mt->testMapIntrStr[99] = "bob";
+
+    printf("8.unused_past stored in allocator is %p \n", alloc->unused_past);
+    mt->testMapString["yilia"] = 18;
+    mt->testMapString["bob"] = 17;
+    printf("9.unused_past stored in allocator is %p \n", alloc->unused_past);
+
+     /* This can only work if SAllocator propagate_on_container_move_assignment is true 
+        Instead, use a map of tables containing a vector.
+     */
+    // mt->testMapVec["vec1"] = mt->CreaterVector<int>();
+    // mt->testMapVec["vec2"] = mt->CreaterVector<int>();
+    // mt->testMapVec["vec1"].push_back(0);
+    // mt->testMapVec["vec1"].push_back(1);
+    // mt->testMapVec["vec2"].push_back(100);
+    // mt->testMapVec["vec2"].push_back(99);
+
+    mt->testMapObj[1] = mt->CreateObj<simple_vector>();  // why this does not work?
+    mt->testMapObj[1]->data.push_back(0);
+    mt->testMapObj[1]->data.push_back(1);
+
+    mt->testMapObj[2] = mt->CreateObj<simple_vector>();
+    mt->testMapObj[2]->data.push_back(100);
+    mt->testMapObj[2]->data.push_back(99);
+    printf("Adrress of MapObj is %p \n", &mt->testMapObj);
+    printf("Adrress of vector1 is %p \n", &mt->testMapObj[1]);
+    printf("Adrress of vec1 data is %p \n", mt->testMapObj[1]->data.data());
+    printf("Adrress of vec2 data is %p \n", mt->testMapObj[2]->data.data());
+
+    std::cout << mt->testMapObj.bucket_count() << std::endl;
+    std::cout << mt->testMapObj.size() << std::endl;
+    std::cout << "vec1 has " << mt->testMapObj[1]->data[0] << " " << mt->testMapObj[1]->data[1] << std::endl;
+    std::cout << "vec2 has " << mt->testMapObj[2]->data[0] << " " << mt->testMapObj[2]->data[1] << std::endl;
+
+    mt->testMapTemp[1] = mt->CreateObj<simpliest>();
+    mt->testMapTemp[1]->foo_ = 100;
+    mt->testMapTemp[1]->bar_ = 999;
 
     mt->Prepare(1);
     while(!mt->PollForAccept()) {}
