@@ -158,7 +158,7 @@ int main(int argc, char* argv[]) {
     mt->testVectorOfrString.push_back("what ");
     mt->testVectorOfrString.push_back("a ");
     mt->testVectorOfrString.push_back("nice ");
-    mt->testVectorOfrString.push_back("what ");
+    mt->testVectorOfrString.push_back("day ");
     printf("7.unused_past stored in allocator is %p \n", alloc->unused_past);
 
     mt->testVectorOfString.push_back("hello ");

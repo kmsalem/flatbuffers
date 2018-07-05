@@ -208,7 +208,12 @@ class CppGenerator : public BaseGenerator {
       code_ += "#pragma clang system_header\n\n";
     }
 
-    code_ += "#include \"flatbuffers/flatbuffers.h\"";
+    if (parser_.opts.generate_ramp_api) {
+      code_ += "#include \"flatbuffers/flatbuffers_ramp.h\"";
+    } else {
+      code_ += "#include \"flatbuffers/flatbuffers.h\"";
+    }
+
     if (parser_.uses_flexbuffers_) {
       code_ += "#include \"flatbuffers/flexbuffers.h\"";
     }

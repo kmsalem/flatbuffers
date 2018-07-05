@@ -4,7 +4,7 @@
 #ifndef FLATBUFFERS_GENERATED_MAPEXPERIMENT_MAP_EXPERIMENT_H_
 #define FLATBUFFERS_GENERATED_MAPEXPERIMENT_MAP_EXPERIMENT_H_
 
-#include "flatbuffers/flatbuffers.h"
+#include "flatbuffers/flatbuffers_ramp.h"
 
 namespace Map {
 namespace Experiment {

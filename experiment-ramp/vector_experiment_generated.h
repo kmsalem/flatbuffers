@@ -4,7 +4,7 @@
 #ifndef FLATBUFFERS_GENERATED_VECTOREXPERIMENT_MAIN_EXPERIMENT_H_
 #define FLATBUFFERS_GENERATED_VECTOREXPERIMENT_MAIN_EXPERIMENT_H_
 
-#include "flatbuffers/flatbuffers.h"
+#include "flatbuffers/flatbuffers_ramp.h"
 
 namespace Main {
 namespace Experiment {
