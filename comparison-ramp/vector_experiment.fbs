@@ -1,0 +1,20 @@
+namespace Comparison.Experiment;
+
+table Vec3 {
+  x:float;
+  y:float;
+  z:float;
+}
+
+table Main {
+  testVector1:[int];
+  testVector2:[string];
+  testVector3:[Child];
+}
+
+table Child {
+  name:string;
+  pos:Vec3; 
+}
+
+root_type Main;
