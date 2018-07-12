@@ -38,7 +38,7 @@ int main(int argc, char* argv[]) {
     }
 
     int id = atoi(argv[2]);
-    size_t size = (size_t)atoi(argv[3]);
+    int size = atoi(argv[3]);
 
     int64_t key = 0;
     int num_entries = (size*0.60)/(88);
@@ -48,17 +48,18 @@ int main(int argc, char* argv[]) {
 
     char *buffer = new char(sizeof(char) * size);
 
-    struct MainT m;
-    struct MainT n;
+    struct MainT *m;
+    struct MainT *n;
     if (id == 0) {
         // setup object#1
+        m = new MainT();
         std::string str = "";
         while(str.size() != 32) {
             str.append("a");
         }
         // build the data
         while (key < num_entries) {
-            m.testVector2.push_back(str);
+            m->testVector2.push_back(str);
             key++;
         }
 
@@ -75,7 +76,7 @@ int main(int argc, char* argv[]) {
             exit(EXIT_FAILURE);
         }
         
-        // Forcefully attaching socket to the port 8080
+        // Forcefully attaching socket to the port 5050
         if (setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT,
                                                     &opt, sizeof(opt)))
         {
@@ -86,7 +87,7 @@ int main(int argc, char* argv[]) {
         address.sin_addr.s_addr = INADDR_ANY;
         address.sin_port = htons( PORT );
         
-        // Forcefully attaching socket to the port 8080
+        // Forcefully attaching socket to the port 5050
         if (bind(server_fd, (struct sockaddr *)&address, 
                                     sizeof(address))<0)
         {
@@ -107,29 +108,49 @@ int main(int argc, char* argv[]) {
 
         printf("start the experiment...\n");
         auto start = std::chrono::high_resolution_clock::now();
-        auto main1 = Main::Pack(mbuilder, &m);
-        mbuilder.Finish(main1);
-        //send(new_socket, mbuilder.GetBufferPointer(), mbuilder.GetSize(), 0);
-        auto main_temp = GetMain(mbuilder.GetBufferPointer());
-        std::cout << main_temp->testVector2()->Get(0)->str() << std::endl;
-        std::cout << "Buffer size is " << mbuilder.GetSize() << " and total size is " << sizeof(char)*size << endl;
-        send(new_socket, mbuilder.GetBufferPointer(), sizeof(char) * size, 0);
 
-        // valread = read(new_socket, buffer, size);
-        // auto main2 = GetMain(buffer);
-        // std::cout << main2->testVector2->Get(0)->str() << std::endl;
+        auto main1 = Main::Pack(mbuilder, m);
+        mbuilder.Finish(main1);
+    
+        std::cout << "Buffer size is " << mbuilder.GetSize() << " and total size is " << sizeof(char)*size << std::endl;
+        //valread = send(new_socket, mbuilder.GetBufferPointer(), sizeof(char) * size, 0);
+        valread = send(new_socket, mbuilder.GetBufferPointer(), mbuilder.GetSize(), 0);
+        // while (valread < size) {
+        //     int sent = send(new_socket, mbuilder.GetBufferPointer()+valread, sizeof(char) * (size-valread), 0);  // error here
+        //     if (sent <= 0) break; // error/close connection
+        //     valread += sent;
+        // }
+        
+        printf("Byte sent is %d\n", valread);
+        
+        // valread = 0;
+        // while (1) {
+        //     //int now = read(sock, buffer, size);
+        //     int read = recv(new_socket, buffer+valread, sizeof(char) * (size-valread), 0);
+        //     if (read == -1) {
+        //         printf("\n recv failed \n");
+        //         return 1;
+        //     }
+        //     if (read == 0) break;
+        //     valread += read;
+        // }
+        // printf("Byte received is %d\n", valread);
+        // n = GetMain(buffer)->UnPack();
+        // std::cout << n->testVector2[0] << std::endl;
+
         auto end = std::chrono::high_resolution_clock::now();
         printf("time cost is %f \n", (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
-
+        //delete m;
     } else {
         // setup object#2
+        n = new MainT();
         std::string str = "";
         while(str.size() != 32) {
             str.append("b");
         }
         // build the data
         while (key < num_entries) {
-            n.testVector2.push_back(str);
+            n->testVector2.push_back(str);
             key++;
         }
 
@@ -138,7 +159,7 @@ int main(int argc, char* argv[]) {
         int sock = 0, valread;
         struct sockaddr_in serv_addr;
         
-        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
+        if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)  // create a tcp_socket
         {
             printf("\n Socket creation error \n");
             return -1;
@@ -163,25 +184,34 @@ int main(int argc, char* argv[]) {
         }
 
         printf("Ready for the experiment...\n");
-        valread = read(sock, buffer, size);  // error here
-
-        //valread = read(sock, buffer, sizeof(char) * size);
-
-        // flatbuffers::Verifier verifier((uint8_t *)buffer, sizeof(char)*size);
-        // bool verified = VerifyMainBuffer(verifier);
-
-        // if (!verified) {
-        //     printf("Error verifying flatbuffer\n");
-        //     return 1;
-        // }
-
-        // auto main1 = GetMain(buffer);
-        // std::cout << main1->testVector2()->Get(0)->str() << std::endl;
-
-        // auto main2 = Main::Pack(nbuilder, &n);
+        // auto main2 = Main::Pack(nbuilder, n);
         // nbuilder.Finish(main2);
-        // send(sock, nbuilder.GetBufferPointer(), nbuilder.GetSize(), 0);
+        while (valread < size) {
+            //int now = read(sock, buffer, size);
+            int read = recv(sock, buffer+valread, sizeof(char) * (size-valread), 0);
+            if (read == -1) {
+                printf("\n recv failed \n");
+                return 1;
+            }
+            if (read == 0) break;
+            valread += read;
+        }
+
+        printf("Byte received is %d\n", valread);
+
+        m = GetMain(buffer)->UnPack();
+        std::cout << m->testVector2[0] << std::endl;
+
+        // auto main2 = Main::Pack(nbuilder, n);  // call Pack here will cause bad_alloc() error
+        // nbuilder.Finish(main2);
+        // std::cout << "Buffer size is " << mbuilder.GetSize() << std::endl;
+        // valread = send(sock, nbuilder.GetBufferPointer(), nbuilder.GetSize(), 0);
+        // printf("Byte sent is %d\n", valread);
+        
+        //delete n;
+        //close(sock);
     }
 
     delete[] buffer;
+    return 0;
 }

@@ -41,18 +41,7 @@ int main(int argc, char* argv[]) {
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);
 
     int64_t key = 0;
-    //number of keys
-    /* Error would happen if we divide a larger number (no experiment result)
-        Page on: in sigsegv_advance : memory not found
-        Page off: segmentation fault */
     int num_entries = (size*0.60)/(88);
-
-    //uniform number generator
-    const int range_from  = 0;
-    const int range_to    = num_entries - 1;
-    std::random_device                  rand_dev;
-    std::mt19937                        generator(rand_dev());
-    std::uniform_int_distribution<int>  distr(range_from, range_to);
 
     RampBuilder<struct MainT> *mb = new RampBuilder<struct MainT>(memory_manager);  // builder for root type
     struct MainT *m;  // target object 
@@ -67,33 +56,28 @@ int main(int argc, char* argv[]) {
         }
         const char *str = value.c_str();
         // build the data
+        //RampAlloc *alloc = (RampAlloc *)((uint8_t *)m->start_);
         while (key < num_entries) {
             m->testVector2.push_back(m->CreaterString(str));
+            //printf("Unused_past now is %p\n", alloc->unused_past);
             key++;
         }
 
-        // warmup?
-        volatile int access = 0;
-        rString val;
-        while (access < 4000000) {
-            val = m->testVector2[distr(generator)];
-            access++;
-        }
+        //printf("wait for another machine to be ready...\n");
+        sleep(5);
+        // start experiment
+        auto start = std::chrono::high_resolution_clock::now();
 
         m->Prepare(1);
         while(!m->PollForAccept()) {}
 
-        printf("wait for another machine to be ready...\n");
-        usleep(500000);
-        // start experiment
-        auto start = std::chrono::high_resolution_clock::now();
         m->Transfer();
         while ((n = mb->PollForRoot()) == nullptr) {}  // #2
-
+        std::cout << n->testVector2[num_entries-1] << std::endl;
         auto end = std::chrono::high_resolution_clock::now();
-        while(!m->PollForClose()) {};
         n->Close();
-        printf("time cost is %f \n", (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
+        while(!m->PollForClose()) {};
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
     } else {
         // setup object #2
         n = mb->CreateRoot(size);
@@ -109,21 +93,14 @@ int main(int argc, char* argv[]) {
             key++;
         }
 
-        // warmup?
-        volatile int access = 0;
-        rString val;
-        while (access < 4000000) {
-            val = n->testVector2[distr(generator)];
-            access++;
-        }
-
-        n->Prepare(0);
-        while(!n->PollForAccept()) {}
-
-        printf("ready to start the experiment...\n");
+        //printf("ready to start the experiment...\n");
 
         while ((m = mb->PollForRoot()) == nullptr) {}  // #1
+        std::cout << m->testVector2[num_entries-1] << std::endl;
+        n->Prepare(0);
+        while(!n->PollForAccept()) {}
         n->Transfer();
+
         m->Close();  // #1
         while(!n->PollForClose()) {};
     }

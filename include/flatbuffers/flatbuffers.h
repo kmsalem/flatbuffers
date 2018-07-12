@@ -926,8 +926,14 @@ class FlatBufferBuilder {
   }
 
   /// @brief Close the connection
-  void PollForClose() {
-    manager_->PollForClose();
+  // void PollForClose() {
+  //   manager_->PollForClose();
+  // }
+  bool PollForClose() {
+    rdma_memory = manager_->PollForClose();
+    if (rdma_memory == nullptr)
+      return false;
+    return true;
   }
 
   /*
