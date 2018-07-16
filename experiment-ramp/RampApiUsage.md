@@ -7,17 +7,23 @@ FlatBuffers-RaMP is an application built and based on RDMA-Migration-System (RaM
 To enable more flexible structures when transferring through RaMP, an object based API specifically for RaMP can be used to create tables inside RaMP segment so that they can be transferred efficiently.
 
 In the following, a full tutorial with simple examples for FlatBuffers-RaMP will be shown, which includes:
-- Setup before using FlatBuffers-RaMP
+- Setup before you started
 - Write a FlatBuffers-RaMP schema file
 - Build the buffer
 - Transfer the buffer
 
-## Setup
-To get use of FlatBuffers-RaMP, both RDMA-Migration-System and FlatBuffers-RaMP projects need to be downloaded and deployed correctly.
+## Before you started
+To get use of FlatBuffers-RaMP, both RDMA-Migration-System and FlatBuffers-RaMP projects need to be deployed correctly. To do this, you need to follow:
+1. Download RDMA-Migration-System
+2. Set up RaMP normally as it requires
+3. Download flatBuffer-RAMP
+4. Build flatBuffer-RAMP project as normal FlatBuffers requires
+5. Create your configuration file and program as shown in later sections
+6. Compile your program, specifically requires flag '-std=c++11', '-I<path to RaMP project /include folder>' and '-I<path to RaMP project /src folder>' (check Makefile in this folder as a sample)
 
-Then you need a configuration file which contains the number of servers in the first line, server id, IP address and port in following lines.
+Configuration file contains the number of servers in the first line; in following lines, they all should have server id, IP address and port number sequentially.
 
-    // config.txt
+    // Example of configuration file: config.txt
     2
     0 10.70.0.9 5050
     1 10.70.0.8 5050
@@ -58,7 +64,7 @@ Here is a sample that defines the monster and relevant tables:
     root_type Monster;
 ```
 #### Tables
-Tables are the only way of defining objects in FlatBuffers-RaMP, and consist of a name and a list of fields. Each field has a name and a type; supported scalar-types and enum can also have a default value as shown above.
+Tables are the only way of defining objects in FlatBuffers-RaMP, and consist of a name and a list of fields. Each field has a name and a type; supported scalar-types and enum can also have a default value as shown above, which will be default value of that field when you create a new table.
 
 #### Types
 1. All scalar-types supported in FlatBuffers:
@@ -66,17 +72,22 @@ Tables are the only way of defining objects in FlatBuffers-RaMP, and consist of 
    - 16 bit: short (int16), ushort (uint16)
    - 32 bit: int (int32), uint (uint32), float (float32)
    - 64 bit: long (int64), ulong (uint64), double (float64)
-3. string
-2. Pointer to other tables (denoted with a table name)
-4. Vector of any other type (denoted with [type])
-5. Unordered map with key being built-in types (eg. int, string…) (denoted as unordered_map(type, type))
+2. string
+    Example: the name field in Weapon table
+3. Pointer to sub-tables (denoted with the sub-table name)
+    Example: the pos field in Monster table, which is a pointer Vec3 table
+4. Vector of any other type including table types (denoted with [type])
+    Example: the weapons field in Monster table, which is a vector of Weapon tables
+5. Unordered map with key being supported scalar-types or string (denoted as unordered_map(type, type))
+    Example: the properties field in Monster table, which is an unordered map with key being string and value type being integer
+
 *Note: Nested containers are not allowed; instead, you can wrap the inner container in a table.*
 
 #### Enum
 Define a sequence of named constants, each with a given value, or increasing by one from the previous one. The default first value is 0. You can specify the underlying integral type of the enum with ‘:’, which determines the type of any fields declared with this enum type.
 
 #### Namespaces
-These will generate the correspondinf namespace in c++ for all hekoer code. Use ‘.’ to specify nested namespaces.
+These will generate the corresponding namespace in c++ for all helper code. Use ‘.’ to specify nested namespaces.
 
 #### Root type
 You have to declare one root type in a schema, which will be the root table of built data.
@@ -124,9 +135,11 @@ To create a table, you need to use CreateObj() method on root table. This lets y
     struct WeaponT * w1 = mt->CreateObj<WeaponT>();
     mt->weapons.push_back(w1);
 ```
-CreaterString(), which creates a rString inside the segment, is also offered. You should call it on root table.
+CreaterString(), which creates a rString inside the segment. You should call it on root table.
 ```cpp
-    rString s1 = mt->CreaterString(“monster”);
+    rString s1 = mt->CreaterString(“left right”);
+    mt->path.push_back(s1);
+    
 ```
 
 ## Transfer the Buffer
@@ -135,18 +148,18 @@ As you have successfully build the buffer, you can send it over machines.
 Send a root table:
 ```cpp
     mt->Prepare(id); // id is the id of the server you want to send to
-    while (!mt->PollForAccept) {} // sending the request to receiving server
-    mt->Transfer(); // transfer the buffer
+    while (!mt->PollForAccept) {} // wait for the receiver to agree to take the segment
+    mt->Transfer(); // transfer the root table and everything it refers
 
     // If you are want to close the connection
     while (!mt->PollForClose()) {}
 ```
-On the recieving machine, you can receive a root table and modify it as shown in ‘Build the Buffer’ sectoin. Before you do that, you also need to create a RDAMMemoryManager and RampBuilder.
+On the recieving machine, you can receive a root table and modify it as shown in ‘Build the Buffer’ sectoin. Before you do that, you also need to create a RDAMMemoryManager and RampBuilder. Don't forget to include the header file for program on receiving side as well!
 ```cpp
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(config.txt, id); // id is the id of the server you currently run on 
     RampBuilder<struct MonsterT> *mb = new RampBuilder<struct MonsterT>(memory_manager);
     struct MonsterT *mt;
-    while((mt = mb->PollForRoot) == nullptr) {} // receive the buffer
+    while((mt = mb->PollForRoot) == nullptr) {} // receive the transferred root object
     
     // If you are ready to close the connection
     mt->Close();
