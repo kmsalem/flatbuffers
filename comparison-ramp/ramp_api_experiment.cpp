@@ -63,20 +63,20 @@ int main(int argc, char* argv[]) {
             key++;
         }
 
-        //printf("wait for another machine to be ready...\n");
-        sleep(5);
+        // printf("wait for another machine to be ready...\n");
+        usleep(5000000);
         // start experiment
-        auto start = std::chrono::high_resolution_clock::now();
+        //auto start = std::chrono::high_resolution_clock::now();
 
         m->Prepare(1);
         while(!m->PollForAccept()) {}
-
+        auto start = std::chrono::high_resolution_clock::now();
         m->Transfer();
         while ((n = mb->PollForRoot()) == nullptr) {}  // #2
-        std::cout << n->testVector2[num_entries-1] << std::endl;
+        // std::cout << n->testVector2[num_entries-1] << std::endl;
         auto end = std::chrono::high_resolution_clock::now();
         n->Close();
-        while(!m->PollForClose()) {};
+        //while(!m->PollForClose()) {};
         std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
     } else {
         // setup object #2
@@ -93,18 +93,21 @@ int main(int argc, char* argv[]) {
             key++;
         }
 
-        //printf("ready to start the experiment...\n");
+        n->Prepare(0);
+        // printf("ready to start the experiment...\n");
 
         while ((m = mb->PollForRoot()) == nullptr) {}  // #1
-        std::cout << m->testVector2[num_entries-1] << std::endl;
-        n->Prepare(0);
+        // std::cout << m->testVector2[num_entries-1] << std::endl;
+        // n->Prepare(0);
+        // while(!n->PollForAccept()) {}
         while(!n->PollForAccept()) {}
         n->Transfer();
 
         m->Close();  // #1
-        while(!n->PollForClose()) {};
+        //while(!n->PollForClose()) {};
     }
 
     delete mb;
     delete memory_manager;
+    return 0;
 }

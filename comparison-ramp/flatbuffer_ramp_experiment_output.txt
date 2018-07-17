@@ -1,0 +1,10 @@
+4497260 microseconds
+4488582 microseconds
+4477894 microseconds
+4495199 microseconds
+4479519 microseconds
+4497475 microseconds
+4485578 microseconds
+4490100 microseconds
+4490911 microseconds
+4497391 microseconds

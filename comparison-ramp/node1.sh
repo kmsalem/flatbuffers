@@ -10,6 +10,8 @@ fi
 
 for ((i=1; i <=10; i++))
 do
+    echo "***********************new test start********************"
+    echo $i >> $output
 	./$1 config.txt $server_id $test_memory >> $output
-    sleep 3
+    sleep 1
 done

@@ -16,6 +16,10 @@
 
 using namespace Comparison::Experiment;
 
+/*
+    In this version of the experiment, time cost of prepare and pollforaccept have to be included
+        as one segment can only has one root object which can only be prepared to be sent after this object is built 
+*/
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "please provide all arguments" << std::endl;
@@ -29,7 +33,7 @@ int main(int argc, char* argv[]) {
     int64_t key = 0;
     int num_entries = (size*0.60)/(88);
 
-    RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);
+    RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);  // one manager can manage several RDMA memory segments
 
     flatbuffers::FlatBufferBuilder mbuilder(memory_manager, size);
     flatbuffers::FlatBufferBuilder nbuilder(memory_manager, size);
@@ -52,12 +56,12 @@ int main(int argc, char* argv[]) {
         }
 
         //printf("Wait for another machine to be ready...\n");
-        sleep(5);
+        usleep(5000000);
         auto start = std::chrono::high_resolution_clock::now();
 
         auto main1 = Main::Pack(mbuilder, m);
         mbuilder.Finish(main1);
-
+        
         mbuilder.Prepare(1);
         while(!mbuilder.PollForAccept()) {}
 
@@ -95,8 +99,11 @@ int main(int argc, char* argv[]) {
         m = GetMain(memory)->UnPack();
         // std::cout << m->testVector2[0] << std::endl;
 
+        // std::cout << n->testVector2[num_entries-5] << std::endl;
         auto main2 = Main::Pack(nbuilder, n);
         nbuilder.Finish(main2);
+        // std::cout << GetMain(nbuilder.GetBufferPointer())->testVector2()->Get(num_entries-5)->str() << std::endl;
+
         nbuilder.Prepare(0);
         while(!nbuilder.PollForAccept()) {}
 
@@ -107,5 +114,6 @@ int main(int argc, char* argv[]) {
         delete n;
     }
 
-    delete memory_manager;
+    delete memory_manager;   // this is the line causing segmentation fault(memory not found in memory map)?
+    return 0;
 }
