@@ -23,25 +23,23 @@
 using namespace Comparison::Experiment;
 
 /*
-    This is experiment transfering flatbuffer through Socket (not working right now...)
-        - data is built using flatbuffers' object API and is packed before transfer
-        - unpack() is not called; instead, Get*() can get the root table (not native table) directly
+    This is experiment transfering flatbuffer through Socket
+        - data is built locally first and then packed into flatbuffer before being sent
+        - data is unpacked into native c++ structure after being received 
         - socket code is copied from online: https://www.geeksforgeeks.org/socket-programming-cc/
-          1. connetion does not work sometimes...
-          2. data transfer is not successful...
 */
 int main(int argc, char* argv[]) {
-    if (argc < 3) {
+    if (argc < 4) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./api_socket_experiment path_to_config id container_size(in bytes)" << std::endl;
+        std::cerr << "./api_socket_experiment path_to_config id num_entries container_size(in bytes)" << std::endl;
         return 1;
     }
 
     int id = atoi(argv[2]);
-    int size = atoi(argv[3]);
+    int num_entries = atoi(argv[3]);
+    int size = atoi(argv[4]);
 
     int64_t key = 0;
-    int num_entries = (size*0.60)/(88);
     flatbuffers::FlatBufferBuilder builder;
 
     char *buffer = new char[size];
@@ -52,7 +50,7 @@ int main(int argc, char* argv[]) {
         // setup object#1
         m = new MainT();
         std::string str = "";
-        while(str.size() != 32) {
+        while(str.size() != 10) {
             str.append("a");
         }
         // build the data
@@ -113,7 +111,7 @@ int main(int argc, char* argv[]) {
         
         send(new_socket, &size, sizeof(int), 0);
         valread = send(new_socket, builder.GetBufferPointer(), size, 0);
-        //size = builder.GetSize();
+        // size = builder.GetSize();
         // char *sbuff = (char *)builder.GetBufferPointer();
         // while (valread < size) {
         //     int sent = send(new_socket, sbuff+valread, sizeof(char) * (size-valread), 0);  // error here
@@ -124,7 +122,7 @@ int main(int argc, char* argv[]) {
         //     valread += sent;
         // }
         
-        //printf("Byte sent is %d\n", valread);
+        // printf("Byte sent is %d\n", valread);
         
         valread = 0;
         recv(new_socket, &size, sizeof(int), 0);
@@ -143,7 +141,6 @@ int main(int argc, char* argv[]) {
         // std::cout << n->testVector2[0] << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
-        
         std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
         delete m;
         close(new_socket);
@@ -151,7 +148,7 @@ int main(int argc, char* argv[]) {
         // setup object#2
         n = new MainT();
         std::string str = "";
-        while(str.size() != 32) {
+        while(str.size() != 10) {
             str.append("b");
         }
         // build the data
@@ -216,7 +213,7 @@ int main(int argc, char* argv[]) {
         size = builder.GetSize();
         // std::cout << "Buffer size is " << size << std::endl;
         send(sock, &size, sizeof(int), 0);
-        valread = send(sock, builder.GetBufferPointer(), builder.GetSize(), 0);
+        valread = send(sock, builder.GetBufferPointer(), size, 0);
         // printf("Byte sent is %d\n", valread);
         
         delete n;

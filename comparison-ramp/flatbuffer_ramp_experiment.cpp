@@ -17,21 +17,29 @@
 using namespace Comparison::Experiment;
 
 /*
+    This is experiment transfering normal flatbuffer through RaMP
+        - data is built locally first and then packed into flatbuffer before being sent
+        - data is unpacked into native c++ structure after being received 
+
+    Setting:
+        PAGING = 0;
+        FAULT TOLERACE = 0;
+
     In this version of the experiment, time cost of prepare and pollforaccept have to be included
         as one segment can only has one root object which can only be prepared to be sent after this object is built 
 */
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./flatbuffer_ramp_experiment path_to_config id container_size(in bytes)" << std::endl;
+        std::cerr << "./flatbuffer_ramp_experiment path_to_config id num_entries container_size(in bytes)" << std::endl;
         return 1;
     }
 
     int id = atoi(argv[2]);
-    size_t size = (size_t)atoi(argv[3]);
+    int num_entries = atoi(argv[3]);
+    size_t size = (size_t)atoi(argv[4]);
 
     int64_t key = 0;
-    int num_entries = (size*0.60)/(88);
 
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);  // one manager can manage several RDMA memory segments
 
@@ -46,7 +54,7 @@ int main(int argc, char* argv[]) {
         // setup object#1
         m = new MainT();
         std::string str = "";
-        while(str.size() != 32) {
+        while(str.size() != 10) {
             str.append("a");
         }
         // build the data
@@ -68,22 +76,21 @@ int main(int argc, char* argv[]) {
         mbuilder.Transfer();
         while ((memory = nbuilder.PollForRoot()) == nullptr) {}
         n = GetMain(memory)->UnPack();
+        nbuilder.Close();
         auto end = std::chrono::high_resolution_clock::now();
 
-        // std::cout << n->testVector2[0] << std::endl;
+        std::cout << n->testVector2[0] << std::endl;
         // std::cout << n->testVector2[num_entries-1] << std::endl;
 
-        nbuilder.Close();
-        while(mbuilder.PollForClose()) {};  // we do not really need PollForClose
+        // while(mbuilder.PollForClose()) {};  // we do not really need PollForClose
 
-        //printf("time cost is %f \n", (double)std::chrono::duration_cast<std::chrono::microseconds>(end - start).count());
         std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
         delete m;
     } else {
         // setup object#1
         n = new MainT();
         std::string str = "";
-        while(str.size() != 32) {
+        while(str.size() != 10) {
             str.append("b");
         }
         // build the data
@@ -97,9 +104,10 @@ int main(int argc, char* argv[]) {
         while ((memory = mbuilder.PollForRoot()) == nullptr) {}
         // unpack
         m = GetMain(memory)->UnPack();
-        // std::cout << m->testVector2[0] << std::endl;
+        mbuilder.Close();
 
         // std::cout << n->testVector2[num_entries-5] << std::endl;
+        
         auto main2 = Main::Pack(nbuilder, n);
         nbuilder.Finish(main2);
         // std::cout << GetMain(nbuilder.GetBufferPointer())->testVector2()->Get(num_entries-5)->str() << std::endl;
@@ -109,8 +117,7 @@ int main(int argc, char* argv[]) {
 
         nbuilder.Transfer();
 
-        mbuilder.Close();
-        while(nbuilder.PollForClose()) {};
+        // while(nbuilder.PollForClose()) {};
         delete n;
     }
 

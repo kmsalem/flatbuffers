@@ -21,7 +21,7 @@ using namespace Comparison::Experiment;
 /*
     This is experiment transfering structured data through RaMP
         - data is built using flatbuffers' object API specifically for RaMP
-        - prepare, pollforaccept and close time are not included in this version of experiment
+        - prepare, pollforaccept and close time are included in the result of experiment
 
     Setting:
         PAGING = 0;
@@ -63,22 +63,21 @@ int main(int argc, char* argv[]) {
             key++;
         }
 
-        // RampAlloc *alloc = (RampAlloc *)((uint8_t *)m->start_);
-        // printf("Unused_past stored in allocator is %p \n", alloc->unused_past);
-        // std::cout << "Used size is " << (char const *)alloc->unused_past - (char const *)m->start_ << std::endl;
-
-        m->Prepare(1);
-        while(!m->PollForAccept()) {}
-        printf("wait for another machine to be ready...\n");
+        // printf("wait for another machine to be ready...\n");
         usleep(5000000);
         // start experiment
         auto start = std::chrono::high_resolution_clock::now();
+
+        m->Prepare(1);
+    
+        while(!m->PollForAccept()) {}
         
         m->Transfer();
         while ((n = mb->PollForRoot()) == nullptr) {}  // #2
         // std::cout << n->testVector2[num_entries-1] << std::endl;
-        auto end = std::chrono::high_resolution_clock::now();
         n->Close();
+        auto end = std::chrono::high_resolution_clock::now();
+        // n->Close();
         //while(!m->PollForClose()) {};
         std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
     } else {
@@ -96,14 +95,17 @@ int main(int argc, char* argv[]) {
             key++;
         }
 
-        n->Prepare(0);
-        while(!n->PollForAccept()) {}
-        printf("ready to start the experiment...\n");
+        // n->Prepare(0);
+        // printf("ready to start the experiment...\n");
 
         while ((m = mb->PollForRoot()) == nullptr) {}  // #1
-        // std::cout << m->testVector2[num_entries-1] << std::endl;
-        n->Transfer();
         m->Close();  // #1
+        // std::cout << m->testVector2[num_entries-1] << std::endl;
+        n->Prepare(0);
+        while(!n->PollForAccept()) {}
+        n->Transfer();
+
+        // m->Close();  // #1
         //while(!n->PollForClose()) {};
     }
 
