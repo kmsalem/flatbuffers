@@ -20,7 +20,7 @@ using namespace Comparison::Experiment;
 int main(int argc, char* argv[]) {
     if (argc < 2) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./pack_int num_entries" << std::endl;
+        std::cerr << "./pack_int num_entries" << std::endl;   // one more unused parameter may be passed in
         return 1;
     }
 
