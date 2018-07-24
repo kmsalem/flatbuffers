@@ -22,7 +22,7 @@ using namespace Comparison::Experiment;
         - data is unpacked into native c++ structure after being received 
 
     Setting:
-        PAGING = 0;
+        PAGING = 0 or 1;
         FAULT TOLERACE = 0;
 
     In this version of the experiment, time cost of prepare and pollforaccept have to be included
@@ -31,7 +31,7 @@ using namespace Comparison::Experiment;
 int main(int argc, char* argv[]) {
     if (argc < 3) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./flatbuffer_ramp_experiment path_to_config id num_entries container_size(in bytes)" << std::endl;
+        std::cerr << "./flatbuffer_ramp_experiment path_to_config id num_entries container_size(in bytes) required_entries(optional)" << std::endl;
         return 1;
     }
 
@@ -42,6 +42,19 @@ int main(int argc, char* argv[]) {
     int64_t key = 0;
 
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);  // one manager can manage several RDMA memory segments
+    
+    #if PAGING
+    manager = memory_manager;
+    initialize();
+
+    int required_entries = atoi(argv[5]);
+    //uniform number generator
+    const int range_from  = 0;
+    const int range_to    = num_entries - 1;
+    std::random_device                  rand_dev;
+    std::mt19937                        generator(rand_dev());
+    std::uniform_int_distribution<int>  distr(range_from, range_to);
+    #endif
 
     flatbuffers::FlatBufferBuilder mbuilder(memory_manager, size);
     flatbuffers::FlatBufferBuilder nbuilder(memory_manager, size);
@@ -76,10 +89,18 @@ int main(int argc, char* argv[]) {
         mbuilder.Transfer();
         while ((memory = nbuilder.PollForRoot()) == nullptr) {}
         n = GetMain(memory)->UnPack();
+        #if PAGING
+        // any difference of using while or for loop?
+        std::string val;
+        for (int i = 0; i < required_entries; ++i) {
+            val = n->testVector2[distr(generator)];
+            // std::cout << val << std::endl;
+        }
+        #endif
         nbuilder.Close();
         auto end = std::chrono::high_resolution_clock::now();
 
-        std::cout << n->testVector2[0] << std::endl;
+        // std::cout << n->testVector2[0] << std::endl;
         // std::cout << n->testVector2[num_entries-1] << std::endl;
 
         // while(mbuilder.PollForClose()) {};  // we do not really need PollForClose
@@ -104,6 +125,14 @@ int main(int argc, char* argv[]) {
         while ((memory = mbuilder.PollForRoot()) == nullptr) {}
         // unpack
         m = GetMain(memory)->UnPack();
+        #if PAGING
+        // any difference of using while or for loop?
+        std::string val;
+        for (int i = 0; i < required_entries; ++i) {
+            val = m->testVector2[distr(generator)];
+            // std::cout << val << std::endl;
+        }
+        #endif
         mbuilder.Close();
 
         // std::cout << n->testVector2[num_entries-5] << std::endl;

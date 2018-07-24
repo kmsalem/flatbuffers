@@ -31,7 +31,7 @@ using namespace Comparison::Experiment;
 int main(int argc, char* argv[]) {
     if (argc < 4) {
         std::cerr << "please provide all arguments" << std::endl;
-        std::cerr << "./api_socket_experiment path_to_config id num_entries container_size(in bytes)" << std::endl;
+        std::cerr << "./api_socket_experiment path_to_config id num_entries container_size(in bytes) required_entries(optional)" << std::endl;
         return 1;
     }
 
@@ -41,6 +41,16 @@ int main(int argc, char* argv[]) {
 
     int64_t key = 0;
     flatbuffers::FlatBufferBuilder builder;
+
+    #if PAGING
+    int required_entries = atoi(argv[5]);
+    //uniform number generator
+    const int range_from  = 0;
+    const int range_to    = num_entries - 1;
+    std::random_device                  rand_dev;
+    std::mt19937                        generator(rand_dev());
+    std::uniform_int_distribution<int>  distr(range_from, range_to);
+    #endif
 
     char *buffer = new char[size];
 
@@ -138,6 +148,14 @@ int main(int argc, char* argv[]) {
         }
         // printf("Byte received is %d\n", valread);
         n = GetMain(buffer)->UnPack();
+        #if PAGING
+        // any difference of using while or for loop?
+        std::string val;
+        for (int i = 0; i < required_entries; ++i) {
+            val = n->testVector2[distr(generator)];
+            // std::cout << val << std::endl;
+        }
+        #endif
         // std::cout << n->testVector2[0] << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
@@ -207,6 +225,14 @@ int main(int argc, char* argv[]) {
 
         m = GetMain(buffer)->UnPack();
         // std::cout << m->testVector2[0] << std::endl;
+        #if PAGING
+        // any difference of using while or for loop?
+        std::string val;
+        for (int i = 0; i < required_entries; ++i) {
+            val = m->testVector2[distr(generator)];
+            // std::cout << val << std::endl;
+        }
+        #endif
 
         auto main2 = Main::Pack(builder, n);  // call Pack here will cause bad_alloc() error
         builder.Finish(main2);
