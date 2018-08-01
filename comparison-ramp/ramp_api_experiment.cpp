@@ -41,6 +41,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // #if PREFETCHING
+    // std::cout << "Prefectching is on..." << std::endl;
+    // #endif
+
+    // #if ASYNC_PREFETCHING
+    // std::cout << "ASYNC_Prefectching is on..." << std::endl;
+    // #endif
+
     int id = atoi(argv[2]);
     int num_entries = atoi(argv[3]);
     size_t size = (size_t)atoi(argv[4]);
@@ -100,14 +108,15 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         rString val;
         for (int i = 0; i < required_entries; ++i) {
-            val = n->testVector2[distr(generator)];
+            val = n->testVector2[i];
+            // val = n->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif
         auto end = std::chrono::high_resolution_clock::now();
         n->Close();
         //while(!m->PollForClose()) {};
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     } else {
         // setup object #2
         n = mb->CreateRoot(size);
@@ -132,7 +141,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         rString val;
         for (int i = 0; i < required_entries; ++i) {
-            val = m->testVector2[distr(generator)];
+            val = m->testVector2[i];
+            // val = m->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif

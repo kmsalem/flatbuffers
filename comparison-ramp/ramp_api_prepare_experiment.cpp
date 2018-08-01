@@ -90,7 +90,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         rString val;
         for (int i = 0; i < required_entries; ++i) {
-            val = n->testVector2[distr(generator)];
+            val = n->testVector2[i];
+            // val = n->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif
@@ -99,7 +100,7 @@ int main(int argc, char* argv[]) {
         auto end = std::chrono::high_resolution_clock::now();
         // n->Close();
         //while(!m->PollForClose()) {};
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
     } else {
         // setup object #2
         n = mb->CreateRoot(size);
@@ -123,7 +124,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         rString val;
         for (int i = 0; i < required_entries; ++i) {
-            val = m->testVector2[distr(generator)];
+            val = m->testVector2[i];
+            // val = m->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif

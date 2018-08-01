@@ -152,14 +152,15 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         std::string val;
         for (int i = 0; i < required_entries; ++i) {
-            val = n->testVector2[distr(generator)];
+            val = n->testVector2[i];
+            //val = n->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif
         // std::cout << n->testVector2[0] << std::endl;
 
         auto end = std::chrono::high_resolution_clock::now();
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
         delete m;
         close(new_socket);
     } else {
@@ -229,7 +230,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         std::string val;
         for (int i = 0; i < required_entries; ++i) {
-            val = m->testVector2[distr(generator)];
+            val = m->testVector2[i];
+            // val = m->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif

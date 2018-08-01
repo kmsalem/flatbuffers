@@ -93,7 +93,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         std::string val;
         for (int i = 0; i < required_entries; ++i) {
-            val = n->testVector2[distr(generator)];
+            val = n->testVector2[i];
+            // val = n->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif
@@ -105,7 +106,7 @@ int main(int argc, char* argv[]) {
 
         // while(mbuilder.PollForClose()) {};  // we do not really need PollForClose
 
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << " microseconds" << std::endl;
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(end - start).count() << std::endl;
         delete m;
     } else {
         // setup object#1
@@ -129,7 +130,8 @@ int main(int argc, char* argv[]) {
         // any difference of using while or for loop?
         std::string val;
         for (int i = 0; i < required_entries; ++i) {
-            val = m->testVector2[distr(generator)];
+            val = m->testVector2[i];
+            // val = m->testVector2[distr(generator)];
             // std::cout << val << std::endl;
         }
         #endif
