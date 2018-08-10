@@ -1,7 +1,3 @@
-/*
-    This file is created by Yuxiao Yu on June 6, 2018
-*/
-
 #ifndef RAMP_BUILDER_H_
 #define RAMP_BUILDER_H_
 
