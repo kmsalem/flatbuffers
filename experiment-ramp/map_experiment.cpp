@@ -1,7 +1,5 @@
 #include <iostream>
 #include <utility>
-#include "flatbuffers/idl.h"
-#include "flatbuffers/util.h"
 #include "map_experiment_generated.h"  // includes "flatbuffer_ramp.h"
 #include "flatbuffers/ramp_builder.h"
 #include "flatbuffers/SAllocator.h"

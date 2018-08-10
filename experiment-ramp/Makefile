@@ -19,7 +19,7 @@ vector_experiment2: vector_experiment2.o
 vector_experiment3: vector_experiment3.o
 	${CXX} -o $@ $^ ${CXXFLAGS} ${LDFLAGS}
 
-map_experiment3: map_experiment.o
+map_experiment: map_experiment.o
 	${CXX} -o $@ $^ ${CXXFLAGS} ${LDFLAGS}
 
 -include ${DEPENDS}
