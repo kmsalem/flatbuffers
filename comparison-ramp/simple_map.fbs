@@ -1,0 +1,8 @@
+namespace Map.Experiment;
+
+table Main {
+  testMap1:unordered_map(string, int);
+  testMap2:unordered_map(int, string);
+}
+
+root_type Main;

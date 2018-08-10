@@ -33,8 +33,9 @@ int main(int argc, char* argv[]) {
     struct MainT *n;
     
     srand(time(0));
-    int value = rand();
+    // int value = rand();
     while (key < num_entries) {
+        int value = rand();
         m->testVector1.push_back(value);
         key++;
     }
