@@ -15,7 +15,7 @@ struct MainT;
 
 struct ChildT;
 
-struct Vec3T : public flatbuffers::NativeTable {
+struct Vec3T : public flatbuffers_ramp::NativeTable {
   float x;
   float y;
   float z;
@@ -26,7 +26,7 @@ struct Vec3T : public flatbuffers::NativeTable {
   }
 };
 
-struct MainT : public flatbuffers::NativeTable {
+struct MainT : public flatbuffers_ramp::NativeTable {
   std::vector<int32_t, SAllocator<int32_t> > testVector1;
   std::vector<rString, SAllocator<rString> > testVector2;
   std::vector<ChildT *, SAllocator<ChildT *> > testVector3;
@@ -37,7 +37,7 @@ struct MainT : public flatbuffers::NativeTable {
   }
 };
 
-struct ChildT : public flatbuffers::NativeTable {
+struct ChildT : public flatbuffers_ramp::NativeTable {
   rString name;
   Vec3T * pos;
   ChildT(RampAlloc *alloc)

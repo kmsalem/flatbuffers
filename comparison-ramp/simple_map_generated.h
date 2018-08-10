@@ -11,7 +11,7 @@ namespace Experiment {
 
 struct MainT;
 
-struct MainT : public flatbuffers::NativeTable {
+struct MainT : public flatbuffers_ramp::NativeTable {
   rMap<rString, int32_t> testMap1;
   rMap<int32_t, rString> testMap2;
   MainT(RampAlloc *alloc)

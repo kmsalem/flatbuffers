@@ -21,7 +21,7 @@
 #include "flatbuffers/SAllocator.h"
 #include <vector>
 
-namespace flatbuffers {
+namespace flatbuffers_ramp {
 
 // Base class for native objects
 struct NativeTable {

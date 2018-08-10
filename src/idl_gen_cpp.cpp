@@ -1575,7 +1575,7 @@ class CppGenerator : public BaseGenerator {
         NativeName(Name(struct_def), &struct_def, parser_.opts);
     code_.SetValue("STRUCT_NAME", Name(struct_def));
     code_.SetValue("NATIVE_NAME", native_name);
-    code_ += "struct {{NATIVE_NAME}} : public flatbuffers::NativeTable {";
+    code_ += "struct {{NATIVE_NAME}} : public flatbuffers_ramp::NativeTable {";
     
     for (auto it = struct_def.fields.vec.begin();
          it != struct_def.fields.vec.end(); ++it) {

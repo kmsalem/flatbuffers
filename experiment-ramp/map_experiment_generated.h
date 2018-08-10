@@ -13,7 +13,7 @@ struct MainT;
 
 struct ChildT;
 
-struct MainT : public flatbuffers::NativeTable {
+struct MainT : public flatbuffers_ramp::NativeTable {
   rMap<int32_t, int32_t> testMap1;
   rMap<int32_t, rString> testMap2;
   rMap<rString, ChildT *> testMap3;
@@ -24,7 +24,7 @@ struct MainT : public flatbuffers::NativeTable {
   }
 };
 
-struct ChildT : public flatbuffers::NativeTable {
+struct ChildT : public flatbuffers_ramp::NativeTable {
   rString name;
   int32_t age;
   ChildT(RampAlloc *alloc)
