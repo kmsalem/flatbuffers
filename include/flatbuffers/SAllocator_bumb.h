@@ -35,24 +35,21 @@ class RampAlloc {
     LogInfo("deallocate(addr = %p, bytes = %p)", addr, (void*) bytes);
   }
 
-  void* pool_addr;
-  size_t pool_size;
-  void* unused_past; // make it public temporarily for debug usage 
 private:
   /*
     * MemoryPool metadata and state.
     * The reason this may be different from the actual addr and size of the 
     * underlying memory is because we may choose to embed information in the memory address themselves
   */
-//   void* pool_addr;
-//   size_t pool_size;
+  void* pool_addr;
+  size_t pool_size;
 
   /**
     * The high watermark for allocated memory, this class implements a
     * simple allocation algorithm by simply pushing the boundary forward, on an
     * RDMA pull, we would only need to pull as much as a unused past
   */
-  // void* unused_past;
+  void* unused_past; // you may need to make this public for debug (in some experiments)
 
   //the actualy size of the rdma memory region
   void* addr;
