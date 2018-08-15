@@ -1,4 +1,5 @@
 #include "LRUCache_generated.h"
+#include "flatbuffers/ramp_builder.h"
 
 using namespace LRUCache;
 
@@ -6,21 +7,32 @@ class LRUmap {
  public:
   LRUmap(): Cache(nullptr) {}
 
-  // initialize cache map with a target root object and capacity
-  void initialize(cacheT *cache, int capacity) {
+  // first initialize cache map with a target root object and capacity
+  void initialize(RDMAMemoryManager* memory_manager, 
+                  int capacity, 
+                  uint8_t size = 12) {
+
     if (capacity <= 0) {
       // invalid capacity
       return;
     }
 
-    Cache = cache;
+    RampBuilder<struct cacheT> *cb = new RampBuilder<struct cacheT>(memory_manager);
+    Cache = cb->CreateRoot(size);
+
     Cache->head = nullptr;
     Cache->tail = nullptr;
     Cache->capacity = capacity;
+
+    delete cb;
   }
 
-  void remote_initialize(cacheT *cache) {
-    Cache = cache;
+  // initialize the map with received data
+  void remote_initialize(RDMAMemoryManager* memory_manager) {
+    RampBuilder<struct cacheT> *cb = new RampBuilder<struct cacheT>(memory_manager);
+    while ((Cache = cb->PollForRoot()) == nullptr) {}
+
+    delete cb;
   }
 
  // added method for implementing LRU cache
@@ -42,16 +54,17 @@ class LRUmap {
   }
 
   void putFront(NodeT *node) {  // how should this work?
-    if (Cache->head == nullptr) {
+    if (Cache->head == nullptr) {  // empty linked list
       assert(Cache->tail == nullptr);
+      assert(node->prev == nullptr);
+      assert(node->next == nullptr);
       Cache->head = node;
       Cache->tail = node;
-      node->prev = nullptr;
-      node->next = nullptr;
+      return;
     }
-    node->next = Cache->head->next;
-    node->prev = nullptr;
+    node->next = Cache->head;
     Cache->head->prev = node;
+    node->prev = nullptr;
     Cache->head = node;
   }
 
@@ -100,6 +113,21 @@ class LRUmap {
 
   void insert(int32_t key, const char * value) {
     insert(key, Cache->CreaterString(value));
+  }
+
+  void send(int id) {
+    Cache->Prepare(1);
+    while(!Cache->PollForAccept()) {}
+    Cache->Transfer();
+  }
+
+  void done() {
+    Cache->Close();
+  }
+
+  // utility function
+  int getCapacity() {
+    return Cache->capacity;
   }
 
  private:

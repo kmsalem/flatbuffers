@@ -1,5 +1,4 @@
 #include "LRUmap.h"
-#include "flatbuffers/ramp_builder.h"
 
 using namespace LRUCache;
 
@@ -14,13 +13,11 @@ using namespace LRUCache;
 int main(int argc, const char * argv []) {
     int id = atoi(argv[2]);
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(argv[1], id);
-    RampBuilder<struct cacheT> *cb = new RampBuilder<struct cacheT>(memory_manager);
     LRUmap *Cache = new LRUmap();
-    struct cacheT * c;
     if (id == 0) {
-        c = cb->CreateRoot(12);  // I do not do this inside initialize because of RampBuilder
+        // c = cb->CreateRoot(12);  // I do not do this inside initialize because of RampBuilder
 
-        Cache->initialize(c, 3);
+        Cache->initialize(memory_manager, 3);
 
         Cache->insert(1, "a");
         Cache->insert(2, "bbb");
@@ -32,22 +29,23 @@ int main(int argc, const char * argv []) {
         Cache->insert(5, "bdddd");
         Cache->insert(4, "dddd");
         
-        // Cache->send(1);
-        c->Prepare(1);
-        while(!c->PollForAccept()) {}
-        c->Transfer();
+        Cache->send(1);  // this may not be what we want -- modify as required
+        
     } else {
-        while ((c = cb->PollForRoot()) == nullptr) {}
-        Cache->remote_initialize(c);
+        Cache->remote_initialize(memory_manager);
 
+        // std::cout << Cache->get(5) << std::endl;
+        std::cout << Cache->get(6) << std::endl; // 6 4 5
+        std::cout << Cache->get(4) << std::endl; // 4 6 5
+        Cache->insert(1, "a"); // 1 4 6
+        std::cout << Cache->get(1) << std::endl; // 1 4 6
+        std::cout << Cache->get(5) << std::endl;
         std::cout << Cache->get(6) << std::endl;
         std::cout << Cache->get(4) << std::endl;
-        std::cout << Cache->get(1) << std::endl;
-        // std::cout << Cache->get(3) << std::endl;
+        std::cout << Cache->getCapacity() << std::endl;
 
-        c->Close();
+        Cache->done();
     }
-    // delete Cache;
+    delete Cache;
     delete memory_manager;
-    delete cb;
 }
