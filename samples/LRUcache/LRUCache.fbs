@@ -1,0 +1,17 @@
+namespace LRUCache;
+
+table cache {
+    cmap:unordered_map(int, Node);
+    head:Node;
+    tail:Node;
+    capacity:int;
+    count:int;
+}
+
+table Node {
+    key:int;
+    value:string;
+    prev:Node;
+    next:Node;
+}
+root_type cache;
