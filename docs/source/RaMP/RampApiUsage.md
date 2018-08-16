@@ -114,9 +114,10 @@ Now we are ready to start building buffers inside RaMP segment. First, we need t
     RDMAMemoryManager* memory_manager = new RDMAMemoryManager(config.txt, id); // id is the id of the server you currently run on 
     RampBuilder<struct MonsterT> *mb = new RampBuilder<struct MonsterT>(memory_manager);
 ```
-This builder object can be used to create a new domains (= RaMP segment) and a root object. You can pass an initial size of the buffer, which will cause an “OUT OF MEMORY” error when you exceed space limitation:
+This builder object can be used to create a new domains (= RaMP segment) and a root object.You should initialize the size of the buffer, which is passed in as a power of 2. For example, 10 passed in below declares a segment of 2^10 = 1024 bytes. You can also set a smallest chunk size as a power of 2, which is 2^4 = 16 bytes by default. This chunk size is used in buddy allocator and means the smallest block that could be allocated. “OUT OF MEMORY” error will happen when you exceed space limitation:
 ```cpp
-    struct MonsterT *mt = mb->CreateRoot(1024);
+    struct MonsterT *mt = mb->CreateRoot(10);
+    // struct MonsterT *mt = mb->CreateRoot(11, 5); // set up a 2^11=2048 bytes segment with min chunk 2^3=8 bytes. 
 ```
 Now you can use the MonsterT as a native C++ object and directly modify the fields that do not require initialization of other tables:
 ```cpp
@@ -134,12 +135,20 @@ To create a table, you need to use CreateObj() method on root table. This lets y
     mt->pos = mt->CreateObj<Vec3T>();
     struct WeaponT * w1 = mt->CreateObj<WeaponT>();
     mt->weapons.push_back(w1);
+    mt->weapons.push_back(mt->CreateObj<WeaponT>());
+
 ```
-CreaterString(), which creates a rString inside the segment. You should call it on root table.
+You are reponsible for freeing allocated object that you create. To do this, DeleteObj() method should be used as below.
+```cpp
+    struct WeaponT * rw = mt->weapons.back();
+    mt->weapons.pop_back();
+    mt->DeleteObj(rw);
+```
+CreaterString() creates a rString inside the segment. You do not have to use it on rString field; however, you should call it when you put string into a C++ container type.
 ```cpp
     rString s1 = mt->CreaterString(“left right”);
     mt->path.push_back(s1);
-    
+    mt->path.push_back(mt->CreaterString("straight"));
 ```
 
 ## Transfer the Buffer
