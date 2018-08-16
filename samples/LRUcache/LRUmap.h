@@ -73,8 +73,8 @@ class LRUmap {
     Cache->tail = last->prev;
     detachNode(last);
     Cache->cmap.erase(last->key);
-    // should we delete the actual Node as well here?
-    // delete(last);  cause error---> free() invalid pointer?
+    // delete the actual Node data
+    Cache->DeleteObj(last);
   }
 
   rString get(int32_t key) {

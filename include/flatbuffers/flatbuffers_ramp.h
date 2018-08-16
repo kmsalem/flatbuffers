@@ -47,6 +47,14 @@ struct NativeTable {
     return result;
   }
 
+  // as we manually call allocator to assign space for object,
+  //  we also need to manually call this allocator to delete it
+  template <typename T>
+  T * DeleteObj(T *addr) {
+    RampAlloc *alloc = (RampAlloc *)((uint8_t *)start_);
+    alloc->deallocate(addr, sizeof(T));
+  }
+
   /* This function is not used any more */
   template <typename T>
   std::vector<T, SAllocator<T> > CreaterVector() {
